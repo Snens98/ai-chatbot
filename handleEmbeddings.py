@@ -108,7 +108,7 @@ def create_embeddings_From_Dokument():
 
 
 
-def test():
+def updateSelectbox():
     datasets_path = 'Datasets'
     dataset_folders = [folder for folder in os.listdir(datasets_path) if os.path.isdir(os.path.join(datasets_path, folder))]
     return dataset_folders
@@ -121,6 +121,7 @@ def test():
 
 def handle_Datasets():
 
+    DB_option = None
     datasets_path = 'Datasets'
 
     if not os.path.exists(datasets_path):
@@ -133,7 +134,7 @@ def handle_Datasets():
         # Streamlit widget for selecting the data set
         DB_option = st.selectbox(
             'Select Dataset: ',
-            test(), index=init.selected_index
+            updateSelectbox(), index=init.selected_index
         )
         init.RAGTopic = DB_option
 
@@ -142,22 +143,22 @@ def handle_Datasets():
             init.selected_index = dataset_folders.index(DB_option)
 
         # Load the FAISS index file based on the selected option
-    
         if DB_option:
             index_path = os.path.join(datasets_path, f"{DB_option}")
+            init.RAGFilePath = index_path
             init.db = FAISS.load_local(index_path, init.embeddings, allow_dangerous_deserialization=True)
-    except RuntimeError as e:
+    except (RuntimeError, Exception) as e:
         st.error("The file is corrupt: ")
-        st.info(index_path)
-        send2trash.send2trash(index_path)
-        test()
-        st.experimental_rerun()
-    except Exception as e:
-        st.error("ERROR")
-        st.info(index_path)
+        try:
+            st.info(index_path)
+            send2trash.send2trash(index_path)
+            updateSelectbox()
+            st.experimental_rerun()
+        except Exception as e:
+            st.info("Choose a other file!")
 
-
-    init.selectedFile = DB_option
+    if DB_option != None:
+        init.selectedFile = DB_option
     st.markdown("<div style='height: 35px;'></div>", unsafe_allow_html=True)
 
 
@@ -182,8 +183,11 @@ def handle_EmbeddingLLM():
 
     with col1:
         embeddingModell_Button = st.button("Load Embedding-Model")
+        #DeleteFile_Button = st.button("Delete current selected file", type="primary")
+
     with col2:
         init.embedding_Mode = st.select_slider('Embedding-Modus', options=['CPU (RAM)', 'GPU [Cuda] (VRAM)'], label_visibility="collapsed")
+
 
     if(embeddingModell_Button):
 
