@@ -11,6 +11,7 @@ import helper
 import json
 import time
 import os
+import functools
 
 
 
@@ -228,7 +229,7 @@ def ModelAvailable(sibling):
 
 
 
-
+@functools.lru_cache(maxsize=None)  # Cache mit unbegrenzter Größe
 def fetch_metadata(url):
     try:
         metadata = get_hf_file_metadata(url)
@@ -240,7 +241,7 @@ def fetch_metadata(url):
 
 
 
-
+@functools.lru_cache(maxsize=None)
 def fetch_metadata_Size(url):
 
     try:
@@ -254,8 +255,7 @@ def fetch_metadata_Size(url):
     return gbStr
 
 
-
-
+@functools.lru_cache(maxsize=None)
 def query_file_size_parallel(models):
 
     resultSize = []
@@ -276,13 +276,11 @@ def query_file_size_parallel(models):
 
 
 
-
 def clicked():
     init.search = True
 
 
 
-# !!! # If you click on delete or download, the search is also started with the current content in the textbox, which should not be the case. :-(
 def model_interaction_interface(models, progress, no_results, iterate_through_GGUFSize, GGUFFileSize = [], max_ram = 32, max_vram= 32):
     for model in models:
 
@@ -296,7 +294,7 @@ def model_interaction_interface(models, progress, no_results, iterate_through_GG
                 if bar > 100:
                     bar = 100
                 progress.progress(bar, text="List models...")
-                
+
                 download_btn = None
                 delete_btn = None
 
@@ -335,7 +333,6 @@ def model_interaction_interface(models, progress, no_results, iterate_through_GG
 
 
 def startSeachBtn():
-    # Setze den Abstand nach unten auf 0
     st.markdown("""
         <style>
             .stButton>button {

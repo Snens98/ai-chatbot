@@ -185,6 +185,7 @@ def main():
     with st.sidebar:
         Sidebar()
 
+
 if __name__ == '__main__':
     main()
 
