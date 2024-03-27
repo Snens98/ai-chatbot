@@ -277,6 +277,10 @@ def query_file_size_parallel(models):
 
 
 
+def clicked():
+    init.search = True
+
+
 
 # !!! # If you click on delete or download, the search is also started with the current content in the textbox, which should not be the case. :-(
 def model_interaction_interface(models, progress, no_results, iterate_through_GGUFSize, GGUFFileSize = [], max_ram = 32, max_vram= 32):
@@ -292,8 +296,7 @@ def model_interaction_interface(models, progress, no_results, iterate_through_GG
                 if bar > 100:
                     bar = 100
                 progress.progress(bar, text="List models...")
-
-
+                
                 download_btn = None
                 delete_btn = None
 
@@ -308,14 +311,13 @@ def model_interaction_interface(models, progress, no_results, iterate_through_GG
 
                 with col2:
                     if ModelAvailable(sibling):
-                        delete_btn = st.button(" Delete ", key=f"delete_{model.id}_{sibling.rfilename}", type="primary", help=f"Remove '{sibling.rfilename}' completely from disk")
+                        delete_btn = st.button(" Delete ", key=f"delete_{model.id}_{sibling.rfilename}", type="primary", help=f"Remove '{sibling.rfilename}' completely from disk", on_click = clicked)
                     else:
-                        download_btn = st.button("Download", key=f"delete_{model.id}_{sibling.rfilename}", help=f"Download language model from hf.co")
+                        download_btn = st.button("Download", key=f"delete_{model.id}_{sibling.rfilename}", help=f"Download language model from hf.co", on_click = clicked)
 
                 with col3:
                     
-                    if not delete_btn or not download_btn or GGUFFileSize != []:
-                        pass
+                    if (not delete_btn or not download_btn) and GGUFFileSize != []:
                         ShowSizeOfFiles(str(GGUFFileSize[iterate_through_GGUFSize])+" GB", helper.get_color_based_on_memory(GGUFFileSize[iterate_through_GGUFSize], max_ram=max_ram, max_vram=max_vram))
                     else:
                         pass
@@ -332,6 +334,24 @@ def model_interaction_interface(models, progress, no_results, iterate_through_GG
 
 
 
+def startSeachBtn():
+    # Setze den Abstand nach unten auf 0
+    st.markdown("""
+        <style>
+            .stButton>button {
+
+                height: 10px; !important;
+                transform: translateY(+30%);
+            }
+        </style>
+    """, unsafe_allow_html=True)
+
+    # Erstelle den Button
+    startSearch = st.button("Start search")
+    return startSearch
+
+
+
 
 
 
@@ -341,34 +361,49 @@ def searchModelsAndRelatedQuants(NumberOfSearchResults = 25):
     GGUFFileSize = []
 
     with st.spinner(f"Search models... 🔎"):
-
         
-        progress = st.progress(0, text="")
+        progress = st.empty()
 
-        searchtext = st.text_input(label="Search language Models ", placeholder="🔎")
-        if searchtext == '' or searchtext is None:
-            return
-        
-        models = model_search(searchtext, " gguf", NumberOfSearchResults)
-        progress.progress(2, text="Search GGUF quants...")
+        with st.container(border=True):
+            col1, col2, col3 = st.columns([1.0, 0.1, 0.3])
 
-        try:
-            GGUFFileSize = query_file_size_parallel(models) # Create list of GGUFFileSize from models found
+            with col1:
+                searchtext = st.text_input(label="Search language Models ", placeholder="🔎")
+            with col3: 
+                startSearch = startSeachBtn()
 
-            progress.progress(20, text="Search GGUF quants...")
 
-            max_ram = helper.get_max_memory()
-            max_vram = helper.get_max_vram()
-            no_results = st.empty()         # Display if no language model was found
-            models = model_search(searchtext, " gguf", NumberOfSearchResults) 
+        if startSearch or init.search:
 
-            model_interaction_interface(models, progress, no_results, iterate_through_GGUFSize, GGUFFileSize, max_ram, max_vram)
-        except TimeoutError as e:
-            st.info("The search took too long and was aborted!")
+            if searchtext == '' or searchtext is None:
+                return
+            
+            models = model_search(searchtext, " gguf", NumberOfSearchResults)
+            progress.progress(2, text="Search GGUF quants...")
 
-    progress.progress(100, text="Complete!")
-    time.sleep(1)
-    progress.empty()
+            try:
+                if not init.search:
+                    GGUFFileSize = query_file_size_parallel(models) # Create list of GGUFFileSize from models found
+
+                progress.progress(20, text="Search GGUF quants...")
+
+                max_ram = helper.get_max_memory()
+                max_vram = helper.get_max_vram()
+                no_results = st.empty()         # Display if no language model was found
+                models = model_search(searchtext, " gguf", NumberOfSearchResults) 
+
+                model_interaction_interface(models, progress, no_results, iterate_through_GGUFSize, GGUFFileSize, max_ram, max_vram)
+
+
+            except TimeoutError as e:
+                st.info("The search took too long and was aborted!")
+
+            progress.progress(100, text="Complete!")
+            time.sleep(1)
+            progress.empty()
+
+    init.search = False
+
 
 
 
@@ -388,7 +423,6 @@ def create_language_model_Link_Button(model_id, model_file_name):
     <p class="hover-blue" style="font-size: 14px; color: #fafafa; background-color: #1a1c24; line-height: 275%; border-radius: 10px; padding-left: 25px;">
         <a href="https://huggingface.co/{model_id}" style="text-decoration: none; color: inherit;">{model_file_name}</a>
     </p>''', unsafe_allow_html=True)
-
 
 
 

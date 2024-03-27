@@ -317,18 +317,21 @@ def get_Embedding_Text_From_Input(results):
 
 def search_similarity_embeddings_From_Input(user_question):
 
-    #try:
-    # Suche alle relevanten Vektoren, die zum Inputvektor passen
-    # results = init.db.similarity_search(user_question)                     # variante ohne Abstands-Score
+    try:
+        # Suche alle relevanten Vektoren, die zum Inputvektor passen
+        # results = init.db.similarity_search(user_question)                     # variante ohne Abstands-Score
 
-    # The returned distance value is the L2 distance. Therefore a lower score is better. Best results sorted in ascending order
-    results = init.db.similarity_search_with_score(user_question, k=init.topk)      #k=x -> Search for the x best results: Vector similarity + Euclidean distance
-    init.results = results
+        # The returned distance value is the L2 distance. Therefore a lower score is better. Best results sorted in ascending order
+        results = init.db.similarity_search_with_score(user_question, k=init.topk)      #k=x -> Search for the x best results: Vector similarity + Euclidean distance
+        init.results = results
 
-    # Ergebnisse zwischenspeichen und Filtern
-    get_Embedding_Text_From_Input(results)
-    #except TypeError as e:
-    #    st.error(e)
+        # Ergebnisse zwischenspeichen und Filtern
+        get_Embedding_Text_From_Input(results)
+    except AttributeError as e:
+        if init.rag:
+            st.info("No File Selected")
+        init.results = ""
+
 
 
 

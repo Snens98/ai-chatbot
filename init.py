@@ -178,3 +178,5 @@ def initVars():
     init.RAGTopic = st.session_state.get('RAGTopic', " ")
 
     init.RAGFilePath = st.session_state.get('RAGFilePath', " ")
+
+    init.search = st.session_state.get('search', False)
