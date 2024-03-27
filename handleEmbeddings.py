@@ -99,7 +99,7 @@ def create_embeddings_From_Dokument():
 
         st.success("The vector representations from the data set were successfully created.")
         st.experimental_rerun()
-    except OSError as e:
+    except (OSError, RuntimeError) as e:
         st.error(f"Unsupported character in '{unique_filename}'")
         st.info("Change the name. Avoid characters like 'Ä, ö, ?, ', ^' and try again!")
 
@@ -108,7 +108,10 @@ def create_embeddings_From_Dokument():
 
 
 
-
+def test():
+    datasets_path = 'Datasets'
+    dataset_folders = [folder for folder in os.listdir(datasets_path) if os.path.isdir(os.path.join(datasets_path, folder))]
+    return dataset_folders
 
 
 
@@ -126,25 +129,31 @@ def handle_Datasets():
     # List of folders in the datasets directory
     dataset_folders = [folder for folder in os.listdir(datasets_path) if os.path.isdir(os.path.join(datasets_path, folder))]
 
-    # Streamlit widget for selecting the data set
-    DB_option = st.selectbox(
-        'Select Dataset: ',
-        dataset_folders, index=init.selected_index
-    )
-
-
-    if dataset_folders != []:
-     # Get the index of the selected option
-        init.selected_index = dataset_folders.index(DB_option)
-
-    # Load the FAISS index file based on the selected option
-        
     try:
+        # Streamlit widget for selecting the data set
+        DB_option = st.selectbox(
+            'Select Dataset: ',
+            test(), index=init.selected_index
+        )
+        init.RAGTopic = DB_option
+
+        if dataset_folders != []:
+        # Get the index of the selected option
+            init.selected_index = dataset_folders.index(DB_option)
+
+        # Load the FAISS index file based on the selected option
+    
         if DB_option:
             index_path = os.path.join(datasets_path, f"{DB_option}")
             init.db = FAISS.load_local(index_path, init.embeddings, allow_dangerous_deserialization=True)
     except RuntimeError as e:
         st.error("The file is corrupt: ")
+        st.info(index_path)
+        send2trash.send2trash(index_path)
+        test()
+        st.experimental_rerun()
+    except Exception as e:
+        st.error("ERROR")
         st.info(index_path)
 
 
@@ -244,9 +253,9 @@ def create_Embedding_from_new_Dataset():
         st.info("""If you want to use a large file with a lot of text, use the 'GPU [Cuda]' setting for the embedding model. This speeds up the process a lot!""", icon="ℹ️")
 
         init.embedding_name = st.text_input(
-            "Name 👇",
-            placeholder="Wikipedia",
-            value="Wikipedia"
+            "Write Topic of the file here 👇",
+            placeholder="Language model",
+            value="Language model"
         )
         
 

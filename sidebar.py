@@ -148,7 +148,7 @@ def handle_toggle_Buttons():
 # If the RAG toggle is active (init.rag is True), it displays the prompt text defined in pr.promptText. Otherwise, it displays the prompt text defined in pr.nonRAG_Prompt. 
 def systemPromptExpander(height):
 
-    promptText = pr.promptText.replace("{", "").replace("}", "")
+    promptText = pr.promptText().replace("{", "").replace("}", "")
     nonRAG_Prompt = pr.nonRAG_Prompt.replace("{", "").replace("}", "")
 
     if init.rag:
@@ -220,7 +220,7 @@ def handle_Prompts():
     #Prompt-Template anzeigen und ändern
     expander3 = st.expander("Additional instructions (at the end)")
     expander5 = st.expander("Chat-History-Template")
-    expander4 = st.expander("Response if no suitable info can be taken from the file")
+    expander4 = st.expander("Response if no suitable info can be taken from the file (RAG)")
 
 
     helper.dividerBr()

@@ -157,9 +157,6 @@ if user_prompt := st.chat_input("Write here a Question...", key="user_input"):
 def main():
 
     vars.initVars()
-
-    with st.sidebar:
-        Sidebar()
     
     tab1, tab2, tab3, tab4, tab5 = st.tabs([" 💬 AI-Chat ", " 🗃️ Retrieval Augmented Generation (RAG)", " 📃 Extracted text", " ℹ️ Infos ", " ✚ Add Language-Model"])
 
@@ -185,6 +182,8 @@ def main():
         with tab7:
             with st.container(border=True):
                 manageLLM.show_Installed_LLMS()
+    with st.sidebar:
+        Sidebar()
 
 if __name__ == '__main__':
     main()

@@ -173,3 +173,6 @@ def initVars():
 
     init.download = st.session_state.get('download', False)
     init.searchValue = st.session_state.get('searchValue', "")
+
+
+    init.RAGTopic = st.session_state.get('RAGTopic', " ")
