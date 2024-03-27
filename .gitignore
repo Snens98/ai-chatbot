@@ -1,6 +1,7 @@
 Datasets/
 tempImages/
 other/
+PDF2TXT/
 *.egg
 *.egg-info
 *.bv

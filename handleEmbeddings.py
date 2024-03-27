@@ -3,11 +3,12 @@ from langchain_community.embeddings import HuggingFaceEmbeddings
 from langchain_community.document_loaders import TextLoader
 from langchain_community.vectorstores import FAISS
 import streamlit as st
+import send2trash
 import tempfile
 import PyPDF2
 import torch
 import os
-
+import re
 
 
 init = st.session_state
@@ -83,20 +84,25 @@ def get_unique_filename(base_name, extension, start=1):
 
 def create_embeddings_From_Dokument():
 
-    # Divide the text into several small blocks (chunks)
-    text_splitter = RecursiveCharacterTextSplitter(chunk_size=init.chunk_size, chunk_overlap=init.overlap)
+    try:
+        # Divide the text into several small blocks (chunks)
+        text_splitter = RecursiveCharacterTextSplitter(chunk_size=init.chunk_size, chunk_overlap=init.overlap)
 
-    # text_splitter = CharacterTextSplitter(chunk_size=50, chunk_overlap=20)                 # other variant
-    docs = text_splitter.split_documents(init.documents)
+        # text_splitter = CharacterTextSplitter(chunk_size=50, chunk_overlap=20)                 # other variant
+        docs = text_splitter.split_documents(init.documents)
 
-    # Create vector database from the document with the embedding model
-    init.db = FAISS.from_documents(docs, init.embeddings)           # The embedding model must be loaded first
+        # Create vector database from the document with the embedding model
+        init.db = FAISS.from_documents(docs, init.embeddings)           # The embedding model must be loaded first
 
-    unique_filename = get_unique_filename(f"Datasets/{init.embedding_name}", "db")
-    init.db.save_local(unique_filename)
+        unique_filename = get_unique_filename(f"Datasets/{init.embedding_name}", "db")
+        init.db.save_local(unique_filename)
 
-    st.success("The vector representations from the data set were successfully created.")
-    st.experimental_rerun()
+        st.success("The vector representations from the data set were successfully created.")
+        st.experimental_rerun()
+    except OSError as e:
+        st.error(f"Unsupported character in '{unique_filename}'")
+        st.info("Change the name. Avoid characters like 'Ä, ö, ?, ', ^' and try again!")
+
 
 
 
@@ -114,6 +120,9 @@ def handle_Datasets():
 
     datasets_path = 'Datasets'
 
+    if not os.path.exists(datasets_path):
+        os.makedirs(datasets_path)
+
     # List of folders in the datasets directory
     dataset_folders = [folder for folder in os.listdir(datasets_path) if os.path.isdir(os.path.join(datasets_path, folder))]
 
@@ -123,14 +132,20 @@ def handle_Datasets():
         dataset_folders, index=init.selected_index
     )
 
+
+    if dataset_folders != []:
      # Get the index of the selected option
-    init.selected_index = dataset_folders.index(DB_option)
+        init.selected_index = dataset_folders.index(DB_option)
 
     # Load the FAISS index file based on the selected option
-    if DB_option:
-        index_path = os.path.join(datasets_path, f"{DB_option}")
-        init.db = FAISS.load_local(index_path, init.embeddings, allow_dangerous_deserialization=True)
-
+        
+    try:
+        if DB_option:
+            index_path = os.path.join(datasets_path, f"{DB_option}")
+            init.db = FAISS.load_local(index_path, init.embeddings, allow_dangerous_deserialization=True)
+    except RuntimeError as e:
+        st.error("The file is corrupt: ")
+        st.info(index_path)
 
 
     init.selectedFile = DB_option
@@ -194,14 +209,26 @@ def getTextfromPDF(uploaded_file, filename):
     for page in pdf_reader.pages:
         text += page.extract_text()
 
+
+    # Definiere den Dateipfad zum Ordner
+    output_folder = "PDF2TXT"
+
+    # Erstelle den Ordner, wenn er nicht existiert
+    if not os.path.exists(output_folder):
+        os.makedirs(output_folder)
+    
+
+
+    # Definiere den Dateipfad zur Textdatei
+    output_path = os.path.join(output_folder, f"{filename}.txt")
+
+
+
     # Save text from the .PDf to a .txt file
-    with open(f"{filename}.txt", "w") as txt_file:
+    with open(output_path, "w") as txt_file:
         txt_file.write(text)
-    st.success(f"The extracted text was saved in '{filename}.txt'.")
+    st.success(f"The extracted text was saved in '.PDF2TXT/{filename}.txt'.")
     return text
-
-
-
 
 
 
@@ -221,6 +248,8 @@ def create_Embedding_from_new_Dataset():
             placeholder="Wikipedia",
             value="Wikipedia"
         )
+        
+
         # Upload-widget to upload .txt and .pdf files
         uploaded_file = st.file_uploader("Create vector representations from the file (supported formats: .txt and .pdf)", type=["txt", "pdf"], disabled=not init.embedding_loaded, accept_multiple_files=False)
 
@@ -230,6 +259,8 @@ def create_Embedding_from_new_Dataset():
 
                # Extract the file name without extension
                 filename = uploaded_file.name
+                # Ersetze Leerzeichen im Dateinamen durch Unterstriche
+                #filename = filename.replace(" ", "_")
                 filename_without_extension = os.path.splitext(filename)[0]
 
                 #Für den Fall, wenn eine .pdf Datei hochgeladen wurde

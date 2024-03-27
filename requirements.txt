@@ -15,6 +15,7 @@ langchain-community==0.0.29
 cmake==3.28.3
 
 
+#conda install -y -c "nvidia/label/cuda-12.1.1" cuda-runtime
 
 #set CMAKE_ARGS=-DLLAMA_CUBLAS=on
 #set FORCE_CMAKE=1
