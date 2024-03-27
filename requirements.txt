@@ -12,6 +12,7 @@ sentence-transformers==2.5.1
 faiss-cpu==1.8.0
 chardet==5.2.0
 langchain-community==0.0.29
+cmake==3.28.3
 
 
 
