@@ -9,7 +9,6 @@ import model
 
 
 
-
 init = st.session_state
 
 
@@ -56,7 +55,6 @@ def saveChat():
                 init.saveChat +=  init.historyTemplateBOT.format(entry['content'])
             
         init.saveChat = helper.replace_brackets(init.saveChat)
-
 
 
 

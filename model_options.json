@@ -237,13 +237,6 @@
         "template": "<|im_start|>system\n{SystemPrompt}<|im_end|>\n<|im_start|>user\n{UserPrompt}<|im_end|>\n<|im_start|>assistant",
         "download": true
     },
-    "llava-v1.5-7b-mmproj-f16.gguf": {
-        "index": 35,
-        "repo_id": "jartine/llava-v1.5-7B-GGUF",
-        "model_file_name": "llava-v1.5-7b-mmproj-f16.gguf",
-        "template": "<|im_start|>system\n{SystemPrompt}<|im_end|>\n<|im_start|>user\n{UserPrompt}<|im_end|>\n<|im_start|>assistant",
-        "download": true
-    },
     "llava-v1.6-vicuna-7b-Q2_K.gguf": {
         "index": 36,
         "repo_id": "second-state/Llava-v1.6-Vicuna-7B-GGUF",

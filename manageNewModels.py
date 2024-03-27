@@ -6,12 +6,12 @@ from huggingface_hub import HfApi
 import concurrent.futures
 import streamlit as st
 import send2trash
+import functools
 import requests
 import helper
 import json
 import time
 import os
-import functools
 
 
 
@@ -131,9 +131,22 @@ def ShowSizeOfFiles(text, color):
 
 
 
+
+
 def show_language_model_variants(variants):
-    st.markdown(f'<p style="font-size: 14px; color: #fafafa; background-color: #1a1c24; line-height: 280%; border-radius: 10px; padding-left: 25px;">{variants.rfilename}</p>', unsafe_allow_html=True)
+    if "mmproj" in variants.rfilename:
+        mmproj = "👁️ "
+        tooltip_text = "ℹ One of the 'mmproj' files is required for the vision function"
+    else:
+        mmproj = ""
+        tooltip_text = ""
+
+    css_style = f'display: flex; align-items: center; font-size: 14px; color: #fafafa; background-color: #1a1c24; line-height: 280%; border-radius: 10px; padding-right: 25px;'
+    element_html = f'<p title="{tooltip_text}" style="{css_style}"><span style="margin-left: 10px;">{variants.rfilename}</span><span style="margin-left: auto;"><span class="tooltip">{mmproj}<span class="tooltiptext"></span></span></span></p>'
+    st.markdown(element_html, unsafe_allow_html=True)
+
     
+
 
 
 def read_model_options_from_file(filename):
@@ -229,7 +242,7 @@ def ModelAvailable(sibling):
 
 
 
-@functools.lru_cache(maxsize=None)  # Cache mit unbegrenzter Größe
+@functools.lru_cache(maxsize=None)
 def fetch_metadata(url):
     try:
         metadata = get_hf_file_metadata(url)
@@ -332,20 +345,22 @@ def model_interaction_interface(models, progress, no_results, iterate_through_GG
 
 
 
-def startSeachBtn():
+def startSearchBtn(key):
     st.markdown("""
         <style>
             .stButton>button {
 
                 height: 10px; !important;
-                transform: translateY(+30%);
+                transform: translateY(+35%);
             }
         </style>
     """, unsafe_allow_html=True)
 
     # Erstelle den Button
-    startSearch = st.button("Start search")
+    startSearch = st.button(" 🔎 Start search ", key=key)
     return startSearch
+
+
 
 
 
@@ -367,7 +382,7 @@ def searchModelsAndRelatedQuants(NumberOfSearchResults = 25):
             with col1:
                 searchtext = st.text_input(label="Search language Models ", placeholder="🔎")
             with col3: 
-                startSearch = startSeachBtn()
+                startSearch = startSearchBtn(key="startSearch")
 
 
         if startSearch or init.search:
@@ -404,22 +419,74 @@ def searchModelsAndRelatedQuants(NumberOfSearchResults = 25):
 
 
 
+
+
+
+def show_language_model_variants(variants):
+    if "mmproj" in variants.rfilename:
+        mmproj = "👁️ "
+        tooltip_text = "ℹ One of the 'mmproj' files is required for the vision function"
+    else:
+        mmproj = ""
+        tooltip_text = ""
+
+    css_style = f'display: flex; align-items: center; font-size: 14px; color: #fafafa; background-color: #1a1c24; line-height: 280%; border-radius: 10px; padding-right: 25px;'
+    element_html = f'<p title="{tooltip_text}" style="{css_style}"><span style="margin-left: 10px;">{variants.rfilename}</span><span style="margin-left: auto;"><span class="tooltip">{mmproj}<span class="tooltiptext"></span></span></span></p>'
+    st.markdown(element_html, unsafe_allow_html=True)
+
     
 
 
 
 
+    
+
+
+
+
+
+
 def create_language_model_Link_Button(model_id, model_file_name):
-    st.markdown(f'''
+    
+    if "mmproj" in model_file_name:
+        mmproj = "👁️ "
+        tooltip_text = "ℹ This is a vision-adapter for vision funktion"
+    else:
+        mmproj = ""
+        tooltip_text = ""
+
+    link_url = f"https://huggingface.co/{model_id}"
+    css_style = f'''
+        display: flex;
+        align-items: center;
+        font-size: 14px;
+        color: #b4b7be;
+        background-color: #1a1c24;
+        line-height: 275%;
+        border-radius: 10px;
+        padding-right: 25px;
+        padding-left: 25px;
+    '''
+    
+    html_content = f'''
     <style>
         .hover-blue:hover {{
-            color: #ff4b4b !important;
-            text-decoration: underline !important;
+            color: #fafafa !important;
+           /* text-decoration: underline !important; */
+            background-color: #131720 !important; 
+
         }}
     </style>
-    <p class="hover-blue" style="font-size: 14px; color: #fafafa; background-color: #1a1c24; line-height: 275%; border-radius: 10px; padding-left: 25px;">
-        <a href="https://huggingface.co/{model_id}" style="text-decoration: none; color: inherit;">{model_file_name}</a>
-    </p>''', unsafe_allow_html=True)
+
+     <p class="hover-blue" title="{tooltip_text}" style="{css_style}">
+        <a href="{link_url}" target="_blank" rel="noopener noreferrer" style="text-decoration: none; color: inherit; margin-right: 20px;">{model_file_name}</a>
+        <span style="margin-left: auto;">{mmproj}</span>
+    </p>
+    '''
+
+    st.markdown(html_content, unsafe_allow_html=True)
+
+
 
 
 
@@ -433,14 +500,14 @@ def show_Installed_LLMS():
     model_ids = [options["repo_id"] for options in data]
     download = [options["download"] for options in data]
     
-    col1, col2, col3 = st.columns([0.7, 0.15, 0.25])
+    col1_, col2_, col3_ = st.columns([0.7, 0.15, 0.25])
 
     for model_file_name, model_id, download in zip(model_file_names, model_ids, download): 
 
-        with col1:        
+        with col1_:        
             create_language_model_Link_Button(model_id, model_file_name)
             
-        with col2:
+        with col2_:
             if st.button("Delete", key=f"{model_file_name}_Del", type="secondary", help=f"Remove '{model_file_name}' completely from disk"):
 
                 data = read_model_options_from_file(filename)
@@ -452,12 +519,13 @@ def show_Installed_LLMS():
                 delete_llm_from_Json(data, model_file_name)
                 update_llm_Json(filename, data)   
 
-        with col3:
+        with col3_:
             if download:
-                st.button("Is available", key=f"delete3_{model_file_name}", type="primary", help="", disabled=True)
-            else:
-                downloadbtn = st.button("Download", key=f"delete_{model_file_name}", type="secondary", help=f"", disabled=False)
+                st.button("Is available", key=f"ha{model_file_name}_Del", type="secondary", help=f"Remove '{model_file_name}' completely from disk", disabled=True)
                 
+            else:
+                downloadbtn = st.button("Download", key=f"hae{model_file_name}_Del", type="secondary", help=f"Remove '{model_file_name}' completely from disk")
+
                 if downloadbtn:
                     with st.spinner(f"Download '{model_id}'"):
                         init.model_path = hf_hub_download(repo_id=model_id, filename=model_file_name, repo_type='model')
