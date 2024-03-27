@@ -1,0 +1,10 @@
+Datasets/
+tempImages/
+other/
+*.egg
+*.egg-info
+*.bv
+*.pyc
+build
+__pycache__
+eggs
