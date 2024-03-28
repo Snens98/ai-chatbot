@@ -12,6 +12,7 @@ import psutil
 import GPUtil
 import os
 import ctypes
+import requests
 
 
 
@@ -126,7 +127,12 @@ def show_error_message(message):
     return result
 
 
-    
+
+
+
+
+
+
 
 
 
@@ -138,14 +144,17 @@ def monitor_memory():
                         
             total_memory = psutil.virtual_memory()
             total_memory_usage = total_memory.used / (1024 * 1024 * 1024)
+
             max_memory = helper.get_max_memory()
             max_vram = helper.get_max_vram()
 
             gpus = GPUtil.getGPUs()
+
             if gpus:
-                for gpu in gpus:
-                    usedvram = gpu.memoryUsed/1024.0
-                    
+                first_gpu = gpus[0]
+                usedvram = (first_gpu.memoryUsed / 1024.0)
+            else:
+                usedvram = 0.0
                     
             usedvram = (float("{:.2f}".format(usedvram))) 
             max_vram = (float("{:.2f}".format(max_vram)))
@@ -264,7 +273,7 @@ def main():
 
     with tab5:
         helper.br()
-        tab6, tab7 = st.tabs([" 🔍 Search language model ", " 📂 Available language models "])
+        tab6, tab7, tab8 = st.tabs([" 🔍 Search language model ", " 📂 Available language models ", " 🌐 Trending models "])
 
         with tab6:
             manageLLM.searchModelsAndRelatedQuants()
@@ -272,6 +281,10 @@ def main():
         with tab7:
             with st.container(border=True):
                 manageLLM.show_Installed_LLMS()
+        with tab8:
+            manageLLM.trendingModels(20)
+            pass
+
     with st.sidebar:
         Sidebar()
 

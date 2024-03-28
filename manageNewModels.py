@@ -104,7 +104,10 @@ def display_model_expander(model):
 
 
 
+# sord by downloads, likes, last_modified
+
 def model_search(searchtext, formatsupport, numberOFSearch):
+
     try:
         api = HfApi()
         searchtext += formatsupport # only GGUF-Format support
@@ -359,6 +362,62 @@ def startSearchBtn(key):
     # Erstelle den Button
     startSearch = st.button(" 🔎 Start search ", key=key)
     return startSearch
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+@functools.lru_cache(maxsize=None)
+def trendingModels(number = 20):
+    url = "https://huggingface.co/api/trending"
+
+    response = requests.get(url)
+
+    # Überprüfen, ob die Anfrage erfolgreich war (Status-Code 200)
+    if response.status_code == 200:
+
+        data = response.json()         # Die JSON-Daten der Antwort extrahieren
+
+        # Auf die Liste der kürzlich angesagten Modelle zugreifen
+        recently_trending = data.get("recentlyTrending", [])
+
+        count = 0
+
+        # Durch jedes Modell in der Liste iterieren und die ID ausgeben
+        for model in recently_trending:
+            if count >= number:
+                break  # Wenn 5 Modelle gefunden wurden, die den Bedingungen entsprechen, die Schleife beenden
+            if model.get("repoType") == "model":
+                model_id = model.get("repoData", {}).get("id")
+                fullname = model.get("authorData", {}).get("fullname")
+                repo_data = model.get("repoData", {})
+                model_id = repo_data.get("id")
+                fullname = repo_data.get("authorData", {}).get("fullname")
+
+                if model_id:
+                    url = f" {count+1}. {fullname} | {model_id} "
+                    create_language_model_Link_Button(model_id, url)
+                    count += 1
+    else:
+        # Falls die Anfrage nicht erfolgreich war, eine entsprechende Meldung ausgeben
+        st.info("Error retrieving the data. Status code: ")
+        st.info(response.status_code)
+
+
+
+
+
+
+
 
 
 
