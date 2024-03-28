@@ -6,6 +6,12 @@ import init as vars
 import sidebar
 import helper
 import model
+import sys
+import threading
+import psutil
+import GPUtil
+import os
+import ctypes
 
 
 
@@ -88,6 +94,92 @@ def AI_Chat():
         st.info("To select a language model use the list at the top left and press 'update language model'", icon="ℹ️")
 
     saveChat()
+
+
+
+
+def exit():
+
+    for proc in psutil.process_iter(['pid', 'name']):
+        if proc.info['name'] == 'python':
+            # Finde den untergeordneten Prozess von python (cmd.exe) und beende ihn
+            for child_proc in psutil.Process(proc.info['pid']).children(recursive=True):
+                if child_proc.name() == 'cmd.exe':
+                    child_proc.terminate()
+                    break
+
+
+
+def show_error_message():
+    st.error("The language model is too large. The program is closed to avoid complications", icon='❌')
+
+
+
+
+def show_error_message(message):
+    MB_YESNO = 0x00000004  # Schaltflächen Ja und Nein
+    MB_ICONQUESTION = 0x00000020  # Fragezeichen-Icon
+
+    # Anzeigen der MessageBox mit Ja/Nein-Schaltflächen
+    ctypes.windll.user32.MessageBeep(0xFFFFFFFF)  # Spielt den Fehlerton ab
+    result = ctypes.windll.user32.MessageBoxW(0, message, "Modell to large", MB_YESNO | MB_ICONQUESTION)
+    return result
+
+
+    
+
+
+
+
+def monitor_memory():
+
+    try:
+        while True:
+                        
+            total_memory = psutil.virtual_memory()
+            total_memory_usage = total_memory.used / (1024 * 1024 * 1024)
+            max_memory = helper.get_max_memory()
+            max_vram = helper.get_max_vram()
+
+            gpus = GPUtil.getGPUs()
+            if gpus:
+                for gpu in gpus:
+                    usedvram = gpu.memoryUsed/1024.0
+                    
+                    
+            usedvram = (float("{:.2f}".format(usedvram))) 
+            max_vram = (float("{:.2f}".format(max_vram)))
+
+            total_memory_usage = (float("{:.2f}".format(total_memory_usage)))
+            max_memory = (float("{:.2f}".format(max_memory)))
+
+            vram = max_vram/1.03 # puffer
+            ram = max_memory/1.03 # puffer
+
+            if usedvram >=(vram) and total_memory_usage >= ram:
+                if show_error_message("The language model is too large. Close the program to avoid complications?") == 6:
+                    os._exit(0)            
+
+
+            threading.Event().wait(1)
+    except KeyboardInterrupt:
+        print("Stopped.")
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -184,6 +276,16 @@ def main():
         Sidebar()
 
 
+    if not init.memUsageThread:
+        init.memUsageThread = True
+        monitor_thread = threading.Thread(target=monitor_memory)
+        monitor_thread.start()
+
+
+
 if __name__ == '__main__':
     main()
+
+
+
 

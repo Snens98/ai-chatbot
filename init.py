@@ -180,3 +180,5 @@ def initVars():
     init.RAGFilePath = st.session_state.get('RAGFilePath', " ")
 
     init.search = st.session_state.get('search', False)
+
+    init.memUsageThread = st.session_state.get('memUsageThread', False)
