@@ -238,30 +238,37 @@
         "download": true
     },
     "llava-v1.6-vicuna-7b-Q2_K.gguf": {
-        "index": 36,
+        "index": 35,
         "repo_id": "second-state/Llava-v1.6-Vicuna-7B-GGUF",
         "model_file_name": "llava-v1.6-vicuna-7b-Q2_K.gguf",
         "template": "<|im_start|>system\n{SystemPrompt}<|im_end|>\n<|im_start|>user\n{UserPrompt}<|im_end|>\n<|im_start|>assistant",
         "download": true
     },
     "llava-v1.6-vicuna-7b-mmproj-model-f16.gguf": {
-        "index": 37,
+        "index": 36,
         "repo_id": "second-state/Llava-v1.6-Vicuna-7B-GGUF",
         "model_file_name": "llava-v1.6-vicuna-7b-mmproj-model-f16.gguf",
         "template": "<|im_start|>system\n{SystemPrompt}<|im_end|>\n<|im_start|>user\n{UserPrompt}<|im_end|>\n<|im_start|>assistant",
         "download": true
     },
     "llava-v1.5-7b-mmproj-Q4_0.gguf": {
-        "index": 38,
+        "index": 37,
         "repo_id": "jartine/llava-v1.5-7B-GGUF",
         "model_file_name": "llava-v1.5-7b-mmproj-Q4_0.gguf",
         "template": "<|im_start|>system\n{SystemPrompt}<|im_end|>\n<|im_start|>user\n{UserPrompt}<|im_end|>\n<|im_start|>assistant",
         "download": true
     },
     "tinyllama-1.1b-chat-v1.0.Q2_K.gguf": {
-        "index": 39,
+        "index": 38,
         "repo_id": "TheBloke/TinyLlama-1.1B-Chat-v1.0-GGUF",
         "model_file_name": "tinyllama-1.1b-chat-v1.0.Q2_K.gguf",
+        "template": "<|im_start|>system\n{SystemPrompt}<|im_end|>\n<|im_start|>user\n{UserPrompt}<|im_end|>\n<|im_start|>assistant",
+        "download": true
+    },
+    "mistral-7b-instruct-v0.1.Q4_0.gguf": {
+        "index": 39,
+        "repo_id": "TheBloke/Mistral-7B-Instruct-v0.1-GGUF",
+        "model_file_name": "mistral-7b-instruct-v0.1.Q4_0.gguf",
         "template": "<|im_start|>system\n{SystemPrompt}<|im_end|>\n<|im_start|>user\n{UserPrompt}<|im_end|>\n<|im_start|>assistant",
         "download": true
     }

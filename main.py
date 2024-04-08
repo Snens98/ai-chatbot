@@ -3,24 +3,23 @@ import manageNewModels as manageLLM
 import writeResponseInFile as wrf
 import streamlit as st
 import init as vars
-import sidebar
-import helper
-import model
-import sys
 import threading
+import sidebar
+import ctypes
 import psutil
 import GPUtil
+import helper
+import model
 import os
-import ctypes
-import requests
 
 
 
 init = st.session_state
 
-
 st.set_page_config(page_title="Local-AI-Chat")
 user_prompt = " "
+
+
 
 
 
@@ -68,6 +67,7 @@ def saveChat():
 
 
 
+
 def AI_Chat():
 
     helper.displayHeader("AI-Chatbot")
@@ -99,11 +99,11 @@ def AI_Chat():
 
 
 
-def exit():
 
+
+def exit():
     for proc in psutil.process_iter(['pid', 'name']):
         if proc.info['name'] == 'python':
-            # Finde den untergeordneten Prozess von python (cmd.exe) und beende ihn
             for child_proc in psutil.Process(proc.info['pid']).children(recursive=True):
                 if child_proc.name() == 'cmd.exe':
                     child_proc.terminate()
@@ -118,11 +118,11 @@ def show_error_message():
 
 
 def show_error_message(message):
-    MB_YESNO = 0x00000004  # Schaltflächen Ja und Nein
-    MB_ICONQUESTION = 0x00000020  # Fragezeichen-Icon
+    MB_YESNO = 0x00000004  # Yes and No buttons
+    MB_ICONQUESTION = 0x00000020  # Question mark icon
 
-    # Anzeigen der MessageBox mit Ja/Nein-Schaltflächen
-    ctypes.windll.user32.MessageBeep(0xFFFFFFFF)  # Spielt den Fehlerton ab
+    # Display the MessageBox with Yes/No buttons
+    ctypes.windll.user32.MessageBeep(0xFFFFFFFF)  # Plays the error sound
     result = ctypes.windll.user32.MessageBoxW(0, message, "Modell to large", MB_YESNO | MB_ICONQUESTION)
     return result
 
@@ -131,17 +131,13 @@ def show_error_message(message):
 
 
 
-
-
-
-
-
-
 def monitor_memory():
+    timer = 0
 
     try:
         while True:
-                        
+
+            timer+=1      
             total_memory = psutil.virtual_memory()
             total_memory_usage = total_memory.used / (1024 * 1024 * 1024)
 
@@ -169,6 +165,9 @@ def monitor_memory():
                 if show_error_message("The language model is too large. Close the program to avoid complications?") == 6:
                     os._exit(0)            
 
+            # After 1h shutdown App
+            if timer > 3600:
+                os._exit(0)
 
             threading.Event().wait(1)
     except KeyboardInterrupt:
@@ -283,17 +282,15 @@ def main():
                 manageLLM.show_Installed_LLMS()
         with tab8:
             manageLLM.trendingModels(20)
-            pass
 
     with st.sidebar:
         Sidebar()
 
-
     if not init.memUsageThread:
         init.memUsageThread = True
-        monitor_thread = threading.Thread(target=monitor_memory)
-        monitor_thread.start()
-
+        #monitor_thread = threading.Thread(target=monitor_memory)
+        #monitor_thread.daemon = True
+        #monitor_thread.start()
 
 
 if __name__ == '__main__':

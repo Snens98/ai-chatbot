@@ -63,9 +63,8 @@ def update_LLM_In_Selectbox(option):
                 
                 init.model_loaded = True
                 init.model_updated = True
-
-                
-    
+                st.rerun()
+            
 
 
 
@@ -102,9 +101,11 @@ def handle_model():
         update_LLM_In_Selectbox(option)
 
     with col2:
-        if st.button("Remove language model", type="primary", help=f"Removes the currently selected language model from the memory (but not from the disk)"):
+        if st.button("Unload language model", type="primary", help=f"Unload the currently selected language model from the memory (but not from the disk)"):
             model.remove_llm()
+            init.model_loaded = False
             st.info(f"Successfully removed!")
+            st.rerun()
     display_model_load_success_message(option, init.model_updated and init.model_loaded)
 
     st.divider()
@@ -253,7 +254,7 @@ def handle_LLM_Settings():
     with border:
         init.gpu_layer = st.slider('Offloaded layers to GPU:', -1, 100, 20, disabled=init.download_Model)
         init.temperature = st.slider('Temperature:', 0.0, 1.0, 0.2, disabled=init.download_Model)
-        init.max_Token, init.n_ctx = st.select_slider('Maximum Output Tokens and n_ctx:', options = list(range(8, 4097)), value=(512, 4096))
+        init.max_Token, init.n_ctx = st.select_slider('Maximum Output Tokens and n_ctx:', options = list(range(8, 4097)), value=(512, 2048))
         init.top_p = st.slider('top_p:', 0.0, 1.0, 0.9)
         init.min_p = st.slider('min_p:', 0.00, 0.50, 0.05)
         init.top_k = st.slider('top_k:', 1, 100, 30)

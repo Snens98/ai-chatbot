@@ -262,7 +262,7 @@ def fetch_metadata_Size(url):
 
     try:
         metadata = get_hf_file_metadata(url)
-        gbStr = round((metadata.size / 1e+9)+2, 2)  # Bytes to GB
+        gbStr = round((metadata.size / 1e+9)+1, 2)  # Bytes to GB
 
     except Exception as e:
         gbStr = 0.0
@@ -376,7 +376,6 @@ def startSearchBtn(key):
 
 
 
-@functools.lru_cache(maxsize=None)
 def trendingModels(number = 20):
     url = "https://huggingface.co/api/trending"
 

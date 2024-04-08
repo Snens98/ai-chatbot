@@ -1,17 +1,26 @@
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain_community.embeddings import HuggingFaceEmbeddings
 from langchain_community.document_loaders import TextLoader
+from llama_index.core import SimpleDirectoryReader
 from langchain_community.vectorstores import FAISS
 import streamlit as st
 import send2trash
 import tempfile
-import PyPDF2
+import shutil
 import torch
 import os
 import re
 
-
 init = st.session_state
+
+
+embeddingModels = ["mixedbread-ai/mxbai-embed-large-v1", "WhereIsAI/UAE-Large-V1",
+                    "avsolatorio/GIST-large-Embedding-v0", "BAAI/bge-large-en-v1.5", 
+                    "BAAI/bge-base-en-v1.5", "thenlper/gte-large", "thenlper/gte-base", 
+                    "intfloat/e5-large-v2", "BAAI/bge-small-en-v1.5"]
+
+
+
 
 
 
@@ -19,27 +28,15 @@ init = st.session_state
 # prepare embeddings #
 ######################
 
-def load_EmbeddingModel(type): # type = cpu oder gpu (CUDA)
+def load_EmbeddingModel(type='cpu'): # type = cpu oder gpu (CUDA)
+    
     if torch.cuda.is_available():
-        init.embeddings = HuggingFaceEmbeddings(model_name=init.EMBEDDING_MODEL_NAME, model_kwargs={'device': type})
+        init.embeddings = HuggingFaceEmbeddings(model_name="intfloat/multilingual-e5-large", model_kwargs={'device': type})
     else:
         st.info("No Cuda GPU is available. Run in CPU-Mode")
-        init.embeddings = HuggingFaceEmbeddings(model_name=init.EMBEDDING_MODEL_NAME, model_kwargs={'device': "cpu"})
+        init.embeddings = HuggingFaceEmbeddings(model_name="intfloat/multilingual-e5-large", model_kwargs={'device': type})
 
 
-
-
-
-
-def prepare_Document_Type(uploaded_file_PDF=None, uploaded_file_TXT=None):
-
-    if uploaded_file_PDF is not None:
-        uploaded_text = uploaded_file_PDF
-        prepare_Document(uploaded_text)
-    
-    if uploaded_file_TXT is not None:
-        uploaded_text = uploaded_file_TXT.read().decode('utf-8')
-        prepare_Document(uploaded_text)
 
 
 
@@ -48,13 +45,14 @@ def prepare_Document_Type(uploaded_file_PDF=None, uploaded_file_TXT=None):
 
 
 def prepare_Document(uploaded_text):
-    # Cache extracted text from the document in a temp_file.txt file
+
     with tempfile.NamedTemporaryFile(mode="w", delete=False, suffix=".txt") as temp_file:
         temp_file.write(uploaded_text)
         temp_file_path = temp_file.name
 
     loader = TextLoader(file_path=temp_file_path)
     init.documents = loader.load()
+    
     os.remove(temp_file_path)
 
 
@@ -94,6 +92,7 @@ def create_embeddings_From_Dokument():
         # Create vector database from the document with the embedding model
         init.db = FAISS.from_documents(docs, init.embeddings)           # The embedding model must be loaded first
 
+    
         unique_filename = get_unique_filename(f"Datasets/{init.embedding_name}", "db")
         init.db.save_local(unique_filename)
 
@@ -112,6 +111,32 @@ def updateSelectbox():
     datasets_path = 'Datasets'
     dataset_folders = [folder for folder in os.listdir(datasets_path) if os.path.isdir(os.path.join(datasets_path, folder))]
     return dataset_folders
+
+
+
+
+
+def removeSelectedDataset():
+    index = init.selected_index
+    datasets_path = 'Datasets'
+    dataset_folders = [folder for folder in os.listdir(datasets_path) if os.path.isdir(os.path.join(datasets_path, folder))]
+
+    if index < len(dataset_folders):
+        folder_to_remove = dataset_folders[index]
+        folder_path = os.path.join(datasets_path, folder_to_remove)
+
+        try:
+            shutil.rmtree(folder_path)
+            st.success(f"Folder '{folder_path}' removed successfully.")
+        except OSError as e:
+            st.error(f"Error: {e.strerror}")
+
+        # To automatically remove the index from the select box
+        st.rerun()
+    else:
+        st.error("Invalid index")
+
+
 
 
 
@@ -134,28 +159,34 @@ def handle_Datasets():
         # Streamlit widget for selecting the data set
         DB_option = st.selectbox(
             'Select Dataset: ',
-            updateSelectbox(), index=init.selected_index
+            updateSelectbox()
         )
-        init.RAGTopic = DB_option
+        topic = DB_option[:-3] if DB_option.endswith('.db') else DB_option
+        init.RAGTopic = topic
 
         if dataset_folders != []:
         # Get the index of the selected option
             init.selected_index = dataset_folders.index(DB_option)
 
+            if st.button("Remove this file", type="primary"):
+                removeSelectedDataset()
+
+
         # Load the FAISS index file based on the selected option
-        if DB_option:
             index_path = os.path.join(datasets_path, f"{DB_option}")
             init.RAGFilePath = index_path
             init.db = FAISS.load_local(index_path, init.embeddings, allow_dangerous_deserialization=True)
     except (RuntimeError, Exception) as e:
-        st.error("The file is corrupt: ")
+        if dataset_folders != []:
+            st.error(f"The file is corrupt or Empty.")
         try:
             st.info(index_path)
             send2trash.send2trash(index_path)
             updateSelectbox()
             st.experimental_rerun()
         except Exception as e:
-            st.info("Choose a other file!")
+            if dataset_folders != []:
+                st.info("Choose a other file!")
 
     if DB_option != None:
         init.selectedFile = DB_option
@@ -175,29 +206,29 @@ def selectedFile():
 
 
 
-
-
 def handle_EmbeddingLLM():
 
-    col1, col2 = st.columns(2)
+    option = st.selectbox(label='Selected Embedding-model', options=["intfloat/multilingual-e5-large [1.8 GB]"], label_visibility="visible")
+    st.text("")
+
+    col1, col2 = st.columns(([2, 3]))
 
     with col1:
         embeddingModell_Button = st.button("Load Embedding-Model")
-        #DeleteFile_Button = st.button("Delete current selected file", type="primary")
 
     with col2:
         init.embedding_Mode = st.select_slider('Embedding-Modus', options=['CPU (RAM)', 'GPU [Cuda] (VRAM)'], label_visibility="collapsed")
 
-
+    st.text("")
     if(embeddingModell_Button):
 
         if init.embedding_loaded is False:
 
             if init.embedding_Mode == "CPU (RAM)":
-                load_EmbeddingModel('cpu')
+                init.embedding = load_EmbeddingModel('cpu')
             else:
-                load_EmbeddingModel('cuda')
-
+                init.embedding = load_EmbeddingModel('cuda')
+            
         init.embedding_loaded = True
 
     if(init.embedding_loaded):
@@ -215,34 +246,16 @@ def handle_EmbeddingLLM():
 
 
 
-def getTextfromPDF(uploaded_file, filename):
-    pdf_reader = PyPDF2.PdfReader(uploaded_file)
-
-    text = ""
-    for page in pdf_reader.pages:
-        text += page.extract_text()
 
 
-    # Definiere den Dateipfad zum Ordner
-    output_folder = "PDF2TXT"
-
-    # Erstelle den Ordner, wenn er nicht existiert
-    if not os.path.exists(output_folder):
-        os.makedirs(output_folder)
-    
-
-
-    # Definiere den Dateipfad zur Textdatei
-    output_path = os.path.join(output_folder, f"{filename}.txt")
-
-
-
-    # Save text from the .PDf to a .txt file
-    with open(output_path, "w") as txt_file:
-        txt_file.write(text)
-    st.success(f"The extracted text was saved in '.PDF2TXT/{filename}.txt'.")
-    return text
-
+def save_uploaded_file(uploaded_file: bytes, save_dir: str):
+    try:
+        if not os.path.exists(save_dir):
+            os.makedirs(save_dir)
+        with open(os.path.join(save_dir, uploaded_file.name), "wb") as f:
+            f.write(uploaded_file.getbuffer())
+    except Exception as e:
+        pass
 
 
 
@@ -254,41 +267,66 @@ def create_Embedding_from_new_Dataset():
 
     border = st.container(border=True)
     with border:
-        st.info("""If you want to use a large file with a lot of text, use the 'GPU [Cuda]' setting for the embedding model. This speeds up the process a lot!""", icon="ℹ️")
-
+        st.info("""If you want to use a large file with a lot of text, use the 'GPU [Cuda]' setting for the embedding model. This speeds up the process a lot! But you need free graphics memory and an Nvidea graphic card.""", icon="ℹ️")
+        st.text("")
         init.embedding_name = st.text_input(
             "Write Topic of the file here 👇",
             placeholder="Language model",
             value="Language model"
         )
-        
+        st.text("")
 
         # Upload-widget to upload .txt and .pdf files
-        uploaded_file = st.file_uploader("Create vector representations from the file (supported formats: .txt and .pdf)", type=["txt", "pdf"], disabled=not init.embedding_loaded, accept_multiple_files=False)
+        uploaded_file = st.file_uploader("Create vector representations from the file", type=["txt", "pdf", "docx"], disabled=not init.embedding_loaded, accept_multiple_files=True)
+        save_dir = os.getcwd() + "/data"
 
-        if uploaded_file is not None:
+        if uploaded_file:
 
             if st.button("Create vector representation"):
 
-               # Extract the file name without extension
-                filename = uploaded_file.name
-                # Ersetze Leerzeichen im Dateinamen durch Unterstriche
-                #filename = filename.replace(" ", "_")
-                filename_without_extension = os.path.splitext(filename)[0]
+                for uploaded in uploaded_file:
+                    save_uploaded_file(uploaded, save_dir)
 
-                #Für den Fall, wenn eine .pdf Datei hochgeladen wurde
-                if uploaded_file.type == 'application/pdf':
+                reader = SimpleDirectoryReader(input_dir=save_dir)
+                documents = reader.load_data()
+                combined_text = ""
 
-                    text = getTextfromPDF(uploaded_file, filename_without_extension)
-                    prepare_Document_Type(text, None)
-                    create_embeddings_From_Dokument()
+                if documents:
+                    for doc in documents:
+                        combined_text += f"{doc.text}\n\n\n"
+                
+                cleaned_text, removed_chars = remove_non_utf8(combined_text)
 
-                #Für den Fall, wenn eine .txt Datei hochgeladen wurde
-                else:
-                    prepare_Document_Type(None, uploaded_file)
-                    create_embeddings_From_Dokument()
+                if len(removed_chars) > 0:
+                    st.info(f"Removed unsupported characters: {removed_chars}")
+
+                prepare_Document(cleaned_text)
+                create_embeddings_From_Dokument()
+
+            st.text("")
+
+        if os.path.exists(save_dir):
+            shutil.rmtree(save_dir)
 
 
+def remove_non_utf8(text):
+    removed_chars = []
+    
+    cleaned_text = text.encode('utf-8', 'ignore').decode('utf-8')
+    
+    printable_chars = ''.join(char for char in cleaned_text if char.isprintable())
+    removed_chars.extend(set(cleaned_text) - set(printable_chars))
+    cleaned_text = printable_chars
+    
+    #removed_non_utf8 = re.findall(r'[^\x00-\x7F]+', cleaned_text)
+
+    # Find all characters that are not in the ASCII range and are not umlauts
+    removed_non_utf8 = re.findall(r'(?![öäü])[^A-Za-z0-9\x00-\x7F]+', cleaned_text)
+
+    cleaned_text = re.sub(r'[^\x00-\x7F]+', '', cleaned_text)
+    removed_chars.extend(removed_non_utf8)
+    
+    return cleaned_text, removed_chars
 
 
 
@@ -304,9 +342,6 @@ def get_Embedding_Text_From_Input(results):
     for doc in results:
         if doc[1] <= init.Euklidischer_Abstand:
             init.vartext += doc[0].page_content + "\n"
-            #init.vartext = init.vartext.replace(r'\n', '\n')
-
-    # Wenn keine Informationen aus dem Datensatz gefunden wurden
     if init.vartext.isspace() or len(init.vartext) == 0:      
         init.vartext = init.notInfo
 
@@ -319,7 +354,7 @@ def search_similarity_embeddings_From_Input(user_question):
 
     try:
         # Suche alle relevanten Vektoren, die zum Inputvektor passen
-        # results = init.db.similarity_search(user_question)                     # variante ohne Abstands-Score
+        # results = init.db.similarity_search(user_question)                   
 
         # The returned distance value is the L2 distance. Therefore a lower score is better. Best results sorted in ascending order
         results = init.db.similarity_search_with_score(user_question, k=init.topk)      #k=x -> Search for the x best results: Vector similarity + Euclidean distance

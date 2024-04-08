@@ -18,14 +18,29 @@ def getTemplate(selected_option, get_template):
         init.template = st.text_area(" ",get_template, height=400)
     elif selected_option == "ChatLM":
         init.template = st.text_area(" ", "<|im_start|>system\n{SystemPrompt}<|im_end|>\n<|im_start|>user{UserPrompt}<|im_end|>\n<|im_start|>assistant", height=400)
+        init.historyTemplateUSER = "<|im_start|>user{}<|im_end|>"
+        init.historyTemplateBOT = "<|im_start|>assistant{}<|im_end|>"
+
     elif selected_option == "Mistral-Instruct":
         init.template = st.text_area(" ", "<s>[INST] {SystemPrompt}{UserPrompt}</s> [/INST]", height=400)
+        init.historyTemplateUSER = "<s>[INST]{}</s> [/INST]"
+        init.historyTemplateBOT = "<s>[INST]{}</s> [/INST]"
+
     elif selected_option == "Orca-Hashes":
         init.template = st.text_area(" ", "### System:\n{SystemPrompt}\n### User:\n{UserPrompt}\n### Assistant:", height=400)
+        init.historyTemplateUSER = "### User:{}"
+        init.historyTemplateBOT = "### Assistant:{}"
+
     elif selected_option == "Llama2-base":
         init.template = st.text_area(" ", "{SystemPrompt}\n{UserPrompt}", height=400)
+        init.historyTemplateUSER = "<|im_start|>user{}<|im_end|>"
+        init.historyTemplateBOT = "<|im_start|>assistant{}<|im_end|>"
+
     elif selected_option == "Llama2-Chat":
         init.template = st.text_area(" ", "[INST] <<SYS>>\n{SystemPrompt}\n<</SYS>>\n{UserPrompt}[/INST]", height=400)
+        init.historyTemplateUSER = "<|im_start|>user{}<|im_end|>"
+        init.historyTemplateBOT = "<|im_start|>assistant{}<|im_end|>"
+        
     elif selected_option == "Mixtral-Instruct":
         init.template = st.text_area(" ", "[INST] {SystemPrompt}\n{UserPrompt} [/INST]", height=400)
     elif selected_option == "User-Assistant":

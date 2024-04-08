@@ -182,3 +182,16 @@ def initVars():
     init.search = st.session_state.get('search', False)
 
     init.memUsageThread = st.session_state.get('memUsageThread', False)
+
+
+
+    init.timer = st.session_state.get('timer', 0)
+
+    init.proces = st.session_state.get('proces', None)
+
+    init.clickEmbedding = st.session_state.get('clickEmbedding', False)
+
+    init.currentFile = st.session_state.get('currentFile', "")
+
+    init.combined_text = st.session_state.get('combined_text', "")
+

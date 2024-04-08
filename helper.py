@@ -99,7 +99,7 @@ def displayHeader(text):
 
 def get_max_memory():
     #  Maximum RAM size in megabytes
-    max_ram = psutil.virtual_memory().total
+    max_ram = psutil.virtual_memory().free
     max_ram_gb = max_ram / (1024 ** 3)  # 1024^3 = 1 GB
     return max_ram_gb
 
