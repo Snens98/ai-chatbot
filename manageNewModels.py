@@ -195,7 +195,8 @@ def add_new_model(name, repo_id, model_file_name, promptTemplate):
         'repo_id': repo_id,
         'model_file_name': model_file_name,
         'template': promptTemplate,
-        "download": True        
+        "download": True,  
+        "recommended": False
     }
     write_model_options_to_file(options, 'model_options.json')
 
@@ -557,10 +558,11 @@ def show_Installed_LLMS():
     model_file_names = [options["model_file_name"] for options in data]
     model_ids = [options["repo_id"] for options in data]
     download = [options["download"] for options in data]
-    
+    recommended = [options["recommended"] for options in data]
+
     col1_, col2_, col3_ = st.columns([0.7, 0.15, 0.25])
 
-    for model_file_name, model_id, download in zip(model_file_names, model_ids, download): 
+    for model_file_name, model_id, download, recommended in zip(model_file_names, model_ids, download, recommended): 
 
         with col1_:        
             create_language_model_Link_Button(model_id, model_file_name)
@@ -569,10 +571,11 @@ def show_Installed_LLMS():
             if st.button("Delete", key=f"{model_file_name}_Del", type="secondary", help=f"Remove '{model_file_name}' completely from disk"):
 
                 data = read_model_options_from_file(filename)
-                deletePath = hf_hub_download(repo_id=model_id, filename=model_file_name, repo_type='model')
-                parentDirectory = os.path.dirname(os.path.dirname(os.path.dirname(deletePath)))
-                send2trash.send2trash(parentDirectory)
-                st.info("'{filename}' has been removed! It has been moved to the Recycle Bin", icon='ℹ️')
+                if not recommended:
+                    deletePath = hf_hub_download(repo_id=model_id, filename=model_file_name, repo_type='model')
+                    parentDirectory = os.path.dirname(os.path.dirname(os.path.dirname(deletePath)))
+                    send2trash.send2trash(parentDirectory)
+                    st.info("'{filename}' has been removed! It has been moved to the Recycle Bin", icon='ℹ️')
 
                 delete_llm_from_Json(data, model_file_name)
                 update_llm_Json(filename, data)   

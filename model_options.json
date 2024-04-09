@@ -4,272 +4,215 @@
         "repo_id": "TheBloke/dolphin-2.2.1-mistral-7B-GGUF",
         "model_file_name": "dolphin-2.2.1-mistral-7b.Q6_K.gguf",
         "template": "<|im_start|>system\n{SystemPrompt}<|im_end|>\n<|im_start|>user{UserPrompt}<|im_end|>\n<|im_start|>assistant",
-        "download": true
+        "download": true,
+        "recommended": false
     },
     "mistral-7b-instruct-v0.1.Q6": {
         "index": 2,
         "repo_id": "TheBloke/Mistral-7B-Instruct-v0.1-GGUF",
         "model_file_name": "mistral-7b-instruct-v0.1.Q6_K.gguf",
         "template": "<s>[INST] {SystemPrompt}{UserPrompt}</s> [/INST]",
-        "download": false
+        "download": false,
+        "recommended": true
     },
     "neural-chat-7b-v3-3.Q6": {
         "index": 3,
         "repo_id": "TheBloke/neural-chat-7B-v3-3-GGUF",
         "model_file_name": "neural-chat-7b-v3-3.Q6_k.gguf",
         "template": "### System:\n{SystemPrompt}\n### User:\n{UserPrompt}\n### Assistant:",
-        "download": false
+        "download": false,
+        "recommended": true
     },
     "solar-10.7b-instruct-v1.0.Q6": {
         "index": 4,
         "repo_id": "TheBloke/SOLAR-10.7B-Instruct-v1.0-GGUF",
         "model_file_name": "solar-10.7b-instruct-v1.0.Q6_K.gguf",
         "template": "{SystemPrompt}\n\n### User:\n{UserPrompt}\n\n### Assistant:",
-        "download": false
+        "download": false,
+        "recommended": true
     },
     "orca-2-13b.Q6": {
         "index": 5,
         "repo_id": "TheBloke/Orca-2-13B-GGUF",
         "model_file_name": "orca-2-13b.Q6_K.gguf",
         "template": "<|im_start|>system\n{SystemPrompt}<|im_end|>\n<|im_start|>user{UserPrompt}<|im_end|>\n<|im_start|>assistant",
-        "download": false
+        "download": false,
+        "recommended": true
     },
     "llama-2-13b.Q6": {
         "index": 6,
         "repo_id": "TheBloke/Llama-2-13B-GGUF",
         "model_file_name": "llama-2-13b.Q6_K.gguf",
         "template": "{SystemPrompt}\n{UserPrompt}",
-        "download": false
+        "download": false,
+        "recommended": true
     },
     "airoboros-l2-13b-3.1.1.Q6": {
         "index": 7,
         "repo_id": "TheBloke/Airoboros-L2-13B-3.1.1-GGUF",
         "model_file_name": "airoboros-l2-13b-3.1.1.Q6_K.gguf",
         "template": "[INST] <<SYS>>\n{SystemPrompt}\n<</SYS>>\n\n{UserPrompt} [/INST]",
-        "download": false
+        "download": false,
+        "recommended": true
     },
     "mixtral-8x7b-instruct-v0.1.Q6": {
         "index": 8,
         "repo_id": "TheBloke/Mixtral-8x7B-Instruct-v0.1-GGUF",
         "model_file_name": "mixtral-8x7b-instruct-v0.1.Q6_K.gguf",
         "template": "[INST] {SystemPrompt}\n{UserPrompt} [/INST]",
-        "download": false
+        "download": false,
+        "recommended": true
     },
     "sauerkrautlm-7b-hero.Q6": {
         "index": 9,
         "repo_id": "TheBloke/SauerkrautLM-7B-HerO-GGUF",
         "model_file_name": "sauerkrautlm-7b-hero.Q6_K.gguf",
         "template": "<|im_start|>system\n{SystemPrompt}<|im_end|>\n<|im_start|>user\n{UserPrompt}<|im_end|>\n<|im_start|>assistant",
-        "download": false
+        "download": false,
+        "recommended": true
     },
     "sauerkrautlm-solar-instruct.Q6": {
         "index": 10,
         "repo_id": "TheBloke/SauerkrautLM-SOLAR-Instruct-GGUF",
         "model_file_name": "sauerkrautlm-solar-instruct.Q6_k.gguf",
         "template": "{SystemPrompt}\n\n### User:\n{UserPrompt}\n\n### Assistant:",
-        "download": false
-    },
-    "sauerkrautlm-13b-v1.Q6": {
-        "index": 11,
-        "repo_id": "TheBloke/SauerkrautLM-13B-v1-GGUF",
-        "model_file_name": "sauerkrautlm-13b-v1.Q6_K.gguf",
-        "template": "{SystemPrompt} \nUser: {UserPrompt} \nAssistant:",
-        "download": false
+        "download": false,
+        "recommended": true
     },
     "em_german_leo_mistral.Q6": {
         "index": 12,
         "repo_id": "TheBloke/em_german_leo_mistral-GGUF",
         "model_file_name": "em_german_leo_mistral.Q6_K.gguf",
         "template": "{SystemPrompt} USER: {UserPrompt} ASSISTANT:",
-        "download": true
+        "download": true,
+        "recommended": true
     },
     "em_german_13b_v01.Q6": {
         "index": 13,
         "repo_id": "TheBloke/em_german_13b_v01-GGUF",
         "model_file_name": "em_german_13b_v01.Q6_K.gguf",
         "template": "{SystemPrompt} USER: {UserPrompt} ASSISTANT:",
-        "download": false
-    },
-    "discolm_german_7b_v1.Q6": {
-        "index": 14,
-        "repo_id": "TheBloke/DiscoLM_German_7b_v1-GGUF",
-        "model_file_name": "discolm_german_7b_v1.Q6_K.gguf",
-        "template": "<|im_start|>system\n{SystemPrompt}<|im_end|>\n<|im_start|>user\n{UserPrompt}<|im_end|>\n<|im_start|>assistant",
-        "download": false
+        "download": false,
+        "recommended": true
     },
     "phi-2.Q2": {
         "index": 15,
         "repo_id": "TheBloke/phi-2-GGUF",
         "model_file_name": "phi-2.Q2_K.gguf",
         "template": "<|im_start|>system\n{SystemPrompt}<|im_end|>\n<|im_start|>user\n{UserPrompt}<|im_end|>\n<|im_start|>assistant",
-        "download": false
-    },
-    "tinyllama-1.1b-chat-v0.6.fp16": {
-        "index": 16,
-        "repo_id": "afrideva/TinyLlama-1.1B-Chat-v0.6-GGUF",
-        "model_file_name": "tinyllama-1.1b-chat-v0.6.fp16.gguf",
-        "template": "<|im_start|>system\n{SystemPrompt}<|im_end|>\n<|im_start|>user\n{UserPrompt}<|im_end|>\n<|im_start|>assistant",
-        "download": false
+        "download": false,
+        "recommended": true
     },
     "Nous-Hermes-2-Mistral-7B-DPO.Q6": {
         "index": 17,
         "repo_id": "NousResearch/Nous-Hermes-2-Mistral-7B-DPO-GGUF",
         "model_file_name": "Nous-Hermes-2-Mistral-7B-DPO.Q6_K.gguf",
         "template": "<|im_start|>system\n{SystemPrompt}<|im_end|>\n<|im_start|>user\n{UserPrompt}<|im_end|>\n<|im_start|>assistant",
-        "download": false
+        "download": false,
+        "recommended": true
     },
     "Nous-Capybara-7b.Q6": {
         "index": 18,
         "repo_id": "TheBloke/Nous-Capybara-7B-GGUF",
         "model_file_name": "nous-capybara-7b.Q6_K.gguf",
         "template": "{SystemPrompt} USER: {UserPrompt}\nASSISTANT:",
-        "download": false
+        "download": false,
+        "recommended": true
     },
     "TheBeagle-7B-v1.Q6": {
         "index": 19,
         "repo_id": "TheBloke/UNA-TheBeagle-7B-v1-GGUF",
         "model_file_name": "una-thebeagle-7b-v1.Q6_K.gguf",
         "template": "{SystemPrompt} {UserPrompt}",
-        "download": false
+        "download": false,
+        "recommended": true
     },
     "Starling-LM-7B-alpha.Q6": {
         "index": 20,
         "repo_id": "TheBloke/Starling-LM-7B-alpha-GGUF",
         "model_file_name": "starling-lm-7b-alpha.Q6_K.gguf",
         "template": "{SystemPrompt} GPT4 User: {UserPrompt}<|end_of_turn|>GPT4 Assistant:",
-        "download": false
+        "download": false,
+        "recommended": true
     },
     "openchat-3.5-0106-128k-DPO.Q5": {
         "index": 21,
         "repo_id": "Eric111/openchat-3.5-0106-128k-DPO-GGUF",
         "model_file_name": "openchat-3.5-0106-128k-dpo.Q5_K_M.gguf",
         "template": "{SystemPrompt} GPT4 Correct User: {UserPrompt}<|end_of_turn|>GPT4 Correct Assistant:",
-        "download": false
+        "download": false,
+        "recommended": true
     },
     "SOLAR-10.7B-Instruct-v1.0.Q5": {
         "index": 22,
         "repo_id": "TheBloke/SOLAR-10.7B-Instruct-v1.0-GGUF",
         "model_file_name": "solar-10.7b-instruct-v1.0.Q5_K_M.gguf",
         "template": "{SystemPrompt}\n### User:\n{UserPrompt}\n\n### Assistant:",
-        "download": false
+        "download": false,
+        "recommended": true
     },
     "Mixtral-8x7B-Instruct-v0.1.Q5": {
         "index": 23,
         "repo_id": "TheBloke/Mixtral-8x7B-Instruct-v0.1-GGUF",
         "model_file_name": "mixtral-8x7b-instruct-v0.1.Q5_K_M.gguf",
         "template": "[INST] {SystemPrompt} [/INST]: {UserPrompt}",
-        "download": false
+        "download": false,
+        "recommended": true
     },
     "Yi-34B-Chat.Q5": {
         "index": 24,
         "repo_id": "TheBloke/Yi-34B-Chat-GGUF",
         "model_file_name": "yi-34b-chat.Q5_0.gguf",
         "template": "<|im_start|>system\n{SystemPrompt}<|im_end|>\n<|im_start|>user\n{UserPrompt}<|im_end|>\n<|im_start|>assistant",
-        "download": false
+        "download": false,
+        "recommended": true
     },
     "deepseek-coder-6.7B-instruct.Q6": {
         "index": 25,
         "repo_id": "TheBloke/deepseek-coder-6.7B-instruct-GGUF",
         "model_file_name": "deepseek-coder-6.7b-instruct.Q6_K.gguf",
         "template": "{SystemPrompt}\n### Instruction:\n{UserPrompt}\n### Response:",
-        "download": false
+        "download": false,
+        "recommended": true
     },
     "CodeLlama-13B-Python.Q6": {
         "index": 26,
         "repo_id": "TheBloke/CodeLlama-13B-Python-GGUF",
         "model_file_name": "codellama-13b-python.Q6_K.gguf",
         "template": "[INST] {SystemPrompt}\n{UserPrompt}\n[/INST]",
-        "download": false
-    },
-    "samantha-mistral-instruct-7B.Q6": {
-        "index": 27,
-        "repo_id": "TheBloke/samantha-mistral-instruct-7B-GGUF",
-        "model_file_name": "samantha-mistral-instruct-7b.Q6_K.gguf",
-        "template": "<|im_start|>system\n{SystemPrompt}<|im_end|>\n<|im_start|>user\n{UserPrompt}<|im_end|>\n<|im_start|>assistant",
-        "download": false
-    },
-    "WizardMath-7B-V1.1.Q6": {
-        "index": 28,
-        "repo_id": "TheBloke/WizardMath-7B-V1.1-GGUF",
-        "model_file_name": "wizardmath-7b-v1.1.Q6_K.gguf",
-        "template": "{SystemPrompt} \n### Instruction:\n{UserPrompt}\n\n### Response:",
-        "download": false
-    },
-    "ggml-model-q2_k": {
-        "index": 29,
-        "repo_id": "kirp/TinyLlama-1.1B-Chat-v0.2-gguf",
-        "model_file_name": "ggml-model-q2_k.gguf",
-        "template": "<|im_start|>system\n{SystemPrompt}<|im_end|>\n<|im_start|>user\n{UserPrompt}<|im_end|>\n<|im_start|>assistant",
-        "download": true
+        "download": false,
+        "recommended": true
     },
     "StarCoder2-7B": {
         "index": 30,
         "repo_id": "second-state/StarCoder2-7B-GGUF",
         "model_file_name": "starcoder2-7b-Q6_K.gguf",
         "template": "<|im_start|>system\n{SystemPrompt}<|im_end|>\n<|im_start|>user\n{UserPrompt}<|im_end|>\n<|im_start|>assistant",
-        "download": true
+        "download": true,
+        "recommended": true
     },
     "deepseek-coder-6.7b-instruct-Q5_K_S.gguf": {
         "index": 31,
         "repo_id": "second-state/Deepseek-Coder-6.7B-Instruct-GGUF",
         "model_file_name": "deepseek-coder-6.7b-instruct-Q5_K_S.gguf",
         "template": "{SystemPrompt}\n### Instruction:\n{UserPrompt}\n### Response:",
-        "download": true
+        "download": true,
+        "recommended": true
     },
     "WizardCoder-Python-7B-V1.0-Q5_K_S.gguf": {
         "index": 32,
         "repo_id": "second-state/WizardCoder-Python-7B-v1.0-GGUF",
         "model_file_name": "WizardCoder-Python-7B-V1.0-Q5_K_S.gguf",
         "template": "<|im_start|>system\n{SystemPrompt}<|im_end|>\n<|im_start|>user\n{UserPrompt}<|im_end|>\n<|im_start|>assistant",
-        "download": true
+        "download": true,
+        "recommended": true
     },
     "Yi-9B-200K-Q5_K_M.gguf": {
         "index": 33,
         "repo_id": "LoneStriker/Yi-9B-200K-GGUF",
         "model_file_name": "Yi-9B-200K-Q5_K_M.gguf",
         "template": "<|im_start|>system\n{SystemPrompt}<|im_end|>\n<|im_start|>user\n{UserPrompt}<|im_end|>\n<|im_start|>assistant",
-        "download": true
-    },
-    "llava-v1.5-7b-Q4_K.gguf": {
-        "index": 34,
-        "repo_id": "jartine/llava-v1.5-7B-GGUF",
-        "model_file_name": "llava-v1.5-7b-Q4_K.gguf",
-        "template": "<|im_start|>system\n{SystemPrompt}<|im_end|>\n<|im_start|>user\n{UserPrompt}<|im_end|>\n<|im_start|>assistant",
-        "download": true
-    },
-    "llava-v1.6-vicuna-7b-Q2_K.gguf": {
-        "index": 35,
-        "repo_id": "second-state/Llava-v1.6-Vicuna-7B-GGUF",
-        "model_file_name": "llava-v1.6-vicuna-7b-Q2_K.gguf",
-        "template": "<|im_start|>system\n{SystemPrompt}<|im_end|>\n<|im_start|>user\n{UserPrompt}<|im_end|>\n<|im_start|>assistant",
-        "download": true
-    },
-    "llava-v1.6-vicuna-7b-mmproj-model-f16.gguf": {
-        "index": 36,
-        "repo_id": "second-state/Llava-v1.6-Vicuna-7B-GGUF",
-        "model_file_name": "llava-v1.6-vicuna-7b-mmproj-model-f16.gguf",
-        "template": "<|im_start|>system\n{SystemPrompt}<|im_end|>\n<|im_start|>user\n{UserPrompt}<|im_end|>\n<|im_start|>assistant",
-        "download": true
-    },
-    "llava-v1.5-7b-mmproj-Q4_0.gguf": {
-        "index": 37,
-        "repo_id": "jartine/llava-v1.5-7B-GGUF",
-        "model_file_name": "llava-v1.5-7b-mmproj-Q4_0.gguf",
-        "template": "<|im_start|>system\n{SystemPrompt}<|im_end|>\n<|im_start|>user\n{UserPrompt}<|im_end|>\n<|im_start|>assistant",
-        "download": true
-    },
-    "tinyllama-1.1b-chat-v1.0.Q2_K.gguf": {
-        "index": 38,
-        "repo_id": "TheBloke/TinyLlama-1.1B-Chat-v1.0-GGUF",
-        "model_file_name": "tinyllama-1.1b-chat-v1.0.Q2_K.gguf",
-        "template": "<|im_start|>system\n{SystemPrompt}<|im_end|>\n<|im_start|>user\n{UserPrompt}<|im_end|>\n<|im_start|>assistant",
-        "download": true
-    },
-    "mistral-7b-instruct-v0.1.Q4_0.gguf": {
-        "index": 39,
-        "repo_id": "TheBloke/Mistral-7B-Instruct-v0.1-GGUF",
-        "model_file_name": "mistral-7b-instruct-v0.1.Q4_0.gguf",
-        "template": "<|im_start|>system\n{SystemPrompt}<|im_end|>\n<|im_start|>user\n{UserPrompt}<|im_end|>\n<|im_start|>assistant",
-        "download": true
+        "download": true,
+        "recommended": true
     }
 }

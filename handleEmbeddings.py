@@ -11,6 +11,7 @@ import torch
 import os
 import re
 
+
 init = st.session_state
 
 
@@ -276,7 +277,7 @@ def create_Embedding_from_new_Dataset():
         )
         st.text("")
 
-        # Upload-widget to upload .txt and .pdf files
+        # Upload-widget to upload .txt, docx and .pdf files
         uploaded_file = st.file_uploader("Create vector representations from the file", type=["txt", "pdf", "docx"], disabled=not init.embedding_loaded, accept_multiple_files=True)
         save_dir = os.getcwd() + "/data"
 
@@ -312,18 +313,15 @@ def create_Embedding_from_new_Dataset():
 def remove_non_utf8(text):
     removed_chars = []
     
-    cleaned_text = text.encode('utf-8', 'ignore').decode('utf-8')
+    #cleaned_text = text.encode('utf-8', 'ignore').decode('utf-8')
+    #printable_chars = ''.join(char for char in cleaned_text if char.isprintable())
+    #removed_chars.extend(set(cleaned_text) - set(printable_chars))
+    #cleaned_text = printable_chars
     
-    printable_chars = ''.join(char for char in cleaned_text if char.isprintable())
-    removed_chars.extend(set(cleaned_text) - set(printable_chars))
-    cleaned_text = printable_chars
-    
-    #removed_non_utf8 = re.findall(r'[^\x00-\x7F]+', cleaned_text)
-
-    # Find all characters that are not in the ASCII range and are not umlauts
-    removed_non_utf8 = re.findall(r'(?![öäü])[^A-Za-z0-9\x00-\x7F]+', cleaned_text)
-
-    cleaned_text = re.sub(r'[^\x00-\x7F]+', '', cleaned_text)
+    # Find all characters that are not in the ASCII range and are not umlauts (ö,ü,ä, for German texts)
+    removed_non_utf8 = re.findall(r'(?![öäüÖÄÜ-])[^A-Za-z0-9\x00-\x7F]+', text)
+    removed_chars = []
+    cleaned_text = re.sub(r'(?![öäüÖÄÜ-])[^A-Za-z0-9\x00-\x7F]+', '', text)
     removed_chars.extend(removed_non_utf8)
     
     return cleaned_text, removed_chars
@@ -353,14 +351,14 @@ def get_Embedding_Text_From_Input(results):
 def search_similarity_embeddings_From_Input(user_question):
 
     try:
-        # Suche alle relevanten Vektoren, die zum Inputvektor passen
+        # Search all relevant vectors that match the input vector
         # results = init.db.similarity_search(user_question)                   
 
         # The returned distance value is the L2 distance. Therefore a lower score is better. Best results sorted in ascending order
         results = init.db.similarity_search_with_score(user_question, k=init.topk)      #k=x -> Search for the x best results: Vector similarity + Euclidean distance
         init.results = results
 
-        # Ergebnisse zwischenspeichen und Filtern
+        # Cache and filter results
         get_Embedding_Text_From_Input(results)
     except AttributeError as e:
         if init.rag:
