@@ -81,13 +81,14 @@ def update_LLM_In_Selectbox(option):
 
 
 
-# This function display_model_load_success_message(option, condition) displays a success message if a certain condition is met. 
-# It retrieves model information from a JSON file based on the provided option and displays a success message indicating 
-# that the language model specified by the option was loaded successfully.
-def display_model_load_success_message(option, condition):
+
+def display_model_load_message(option, condition):
     if condition:
         model_info = manageLLM.read_model_options_from_file('model_options.json').get(option, {})
         st.success(f"The language model {model_info['model_file_name']} was loaded successfully!")
+    else:
+        st.info(f"Successfully removed!")
+
 
 
 
@@ -112,9 +113,8 @@ def handle_model():
     with col2_Unload_language_model:
         if st.button("Unload language model", type="primary", help=f"Unload the currently selected language model from the memory (but not from the disk)"):
             model.remove_llm()
-            st.info(f"Successfully removed!")
             st.rerun()
-    display_model_load_success_message(option, init.model_updated and init.model_loaded)
+    display_model_load_message(option, init.model_updated and init.model_loaded)
 
     st.divider()
     helper.br()
@@ -150,9 +150,6 @@ def handle_toggle_Buttons():
 
 
 
-
-# The primary function of systemPromptExpander(height) is to display a text area with system prompts based on the current state of the RAG toggle button. 
-# If the RAG toggle is active (init.rag is True), it displays the prompt text defined in pr.promptText. Otherwise, it displays the prompt text defined in pr.nonRAG_Prompt. 
 def systemPromptExpander(height):
 
     promptText = pr.promptText().replace("{", "").replace("}", "")

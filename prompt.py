@@ -4,7 +4,7 @@ init = st.session_state
 
 
 
-# Mapping der Optionen zu den Modellinformationen
+# Mapping the options to the model information
 model_options = {
 
     "phi-2.Q6 [3.6 GB]": {
@@ -101,7 +101,7 @@ If the information in the question does not match the information between ###Con
 
 
 
-end_Instruction="Antworte auf deutsch und kurz!"
+end_Instruction="Give a short answer!"
 
 
 
