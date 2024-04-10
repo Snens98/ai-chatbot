@@ -120,7 +120,7 @@ def day_and_time():
 
 
 def systemPrompt(marker="###Context###"):
-    if init.rag:
+    if isRagActive():
         system_prompt = f"{pr.init.system_prompt}\n\n{marker}\n{init.vartext}\n{marker}\n\n{day_and_time()}\n\n{init.saveChat}\n\n"
     else:
         system_prompt = f"{pr.init.system_prompt}\n\n{day_and_time()}\n\n{init.saveChat}\n\n"
@@ -146,7 +146,6 @@ def updatePrompt():
         init.prompt = init.template.format(SystemPrompt=system_prompt, UserPrompt=user_prompt)
         return init.prompt
     
-
     except (ValueError, KeyError, IndexError) as e:
         helper.dividerBr()
         helper.errorMsg(error="Remove token sequences like {, {}, {text} from System-Prompt.", info=r"Only {SytemPrompt} and {UserPrompt} are allowed!")
@@ -156,9 +155,6 @@ def updatePrompt():
         init.prompt = "Hello!"
         init.promptError = True
         return init.prompt
-
-
-
 
 
 
@@ -317,13 +313,11 @@ def tooManyLineBreaks(text, numberOfLineBreaks):
         return True
     
 
-def handle_n_ctx(_error):
-    match = re.search(r'\((\d+)\)', str(_error))
-    if match:
-        number = match.group(1)
+def handle_n_ctx_Errors(_error):
+    filterInvalidCTXNumber = re.search(r'\((\d+)\)', str(_error))
+    if filterInvalidCTXNumber:
+        number = filterInvalidCTXNumber.group(1)
     st.error(f"n_ctx must be set to at least {number}")
-
-
 
 
 def displayCurrentToken(output_container, currentResult, Icon="🔘"):
@@ -334,7 +328,6 @@ def displayCurrentToken(output_container, currentResult, Icon="🔘"):
 
 def displayFinishedOutput(cancelBtn, output_container, result, completedSymbol="🟢"):
     cancelBtn.empty()
-    output_container.markdown("")
     output_container.markdown(result + completedSymbol)
     st.session_state.messages.append({"role": "assistant", "content": init.fullResponse})
 
@@ -369,18 +362,30 @@ def displayCancelButton():
 
 
 
-
 # Process the user input and generate a response from the language model. It creates a user interface for the chat with an input field for the user
 # input and an output field for the generated response. Within the function, the language model is retrieved using the get_model() function. 
 # This function ensures the interaction between the user and the language model.
-def process_user_prompt():
+def process_user_prompt(user_prompt):
 
+    try:
+        if isRagPipelineActive():
+            embeddings.search_similarity_embeddings_From_Input(user_prompt)  # Embeddings are created based on the input and similarities are searched for  
+    except AssertionError:
+        helper.errorMsg(error="The selected file does not match the current embedding model", info="Select the correct file or change it to the appropriate embedding model")
+
+
+    # Display User-Imput
+    with st.chat_message("user"):
+        st.session_state.messages.append({"role": "user", "content": user_prompt})   
+        st.markdown(user_prompt)
+
+
+    # Display LLM-Response
     with st.chat_message("ai"):
 
         output_container = st.empty()
         button_container = displayCancelButton()
-        result = ""
-        resultChar = ""
+        token = ""
 
         with st.spinner("Generate response"):
 
@@ -388,30 +393,33 @@ def process_user_prompt():
                 for output in getModel():
 
                     if init.mmprojFileFound:
-                        result += iterateThroughVisionOutput(output)   
+                        token += iterateThroughVisionOutput(output)   
                     else:
-                        result += iterateThroughLLMOutput(output)   
+                        token += iterateThroughLLMOutput(output)   
 
-                    # print chars 
-                    #for char in result:
-                    #    resultChar +=char
-
-                    if tooManyLineBreaks(result, 500):
+                    if tooManyLineBreaks(token, 500):
                         break
                 
-                    init.fullResponse = result
-                    displayCurrentToken(output_container, result, Icon="🔘")
+                    init.fullResponse = token
+                    displayCurrentToken(output_container, token, Icon="🔘")
 
-            except ValueError as e:
-                handle_n_ctx(e)
+            except ValueError as error:
+                handle_n_ctx_Errors(error)
 
-            displayFinishedOutput(button_container, output_container, result, completedSymbol="🟢")
-
-
+            displayFinishedOutput(button_container, output_container, token, completedSymbol="🟢")
 
 
-def isRagActive():
-    if init.rag & init.embedding_loaded & init.file:
+
+
+def isRagPipelineActive():
+    if init.rag and init.embedding_loaded and init.file:
+        return True
+    return False
+
+
+
+def isRagActive()->bool:
+    if init.rag:
         return True
     return False
 
@@ -419,37 +427,9 @@ def isRagActive():
 
 
 
-# Processes the user input for the response of the language model. It saves the input and displays it in the browser window. 
-# If activated, it searches for similarities in the embeddings based on the input.
-
-def LLm_Response(user_prompt):
-
-    init.error = False
-
-    try:
-        if not init.model_loaded:
-            return
-
-        init.user_prompt = user_prompt  
-
-        if isRagActive():
-            embeddings.search_similarity_embeddings_From_Input(init.user_prompt)  # Embeddings are created based on the input and similarities are searched for
-
-        #  show user prompt in the browser window
-        st.session_state.messages.append({"role": "user", "content": user_prompt})   
-
-    except AssertionError:
-        init.error = True
-        helper.errorMsg(error="The selected file does not match the current embedding model", info="Select the correct file or change it to the appropriate embedding model")
-
-
-
-
-
-
 
 # Displays the chat history in the browser window by iterating through the saved messages and displaying them in the chat window according to their type (user or assistant).
-def display_Chathistory():
-    for message in st.session_state.messages[-1:]:
+def displayLastChatMessages(numberOfInputResponsePairs=2):
+    for message in st.session_state.messages[-numberOfInputResponsePairs:]:
         with st.chat_message(message["role"]):
             st.markdown(message["content"])

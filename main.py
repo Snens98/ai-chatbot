@@ -15,7 +15,6 @@ import os
 
 
 init = st.session_state
-
 st.set_page_config(page_title="Local-AI-Chat")
 user_prompt = " "
 
@@ -44,15 +43,15 @@ def Sidebar():
 
 
 
-def saveChat():
+def saveChatForLLM_Memory(numberOfUserAssistensPairsToBeStored = 6, enabled=False):
     init.saveChat = """ """
 
-    if init.usechatMemory:
-        num_entries = len(st.session_state.messages)
-        num_to_save = min(num_entries, 7)
-        last_entries = st.session_state.messages[-num_to_save:]
+    if enabled:
+        num_chatMessages = len(st.session_state.messages)
+        num_to_save_chatMessages = min(num_chatMessages, numberOfUserAssistensPairsToBeStored)
+        last_entries_chatMessages = st.session_state.messages[-num_to_save_chatMessages:]
 
-        for entry in last_entries:
+        for entry in last_entries_chatMessages:
 
             if entry['role'] == 'user':
                 init.saveChat += init.historyTemplateUSER.format(entry['content'])
@@ -60,11 +59,65 @@ def saveChat():
             elif entry['role'] == 'assistant':
                 init.saveChat +=  init.historyTemplateBOT.format(entry['content'])
             
-        init.saveChat = helper.replace_brackets(init.saveChat)
+        init.saveChat = helper.replaceBracketThatCodeCanStored(init.saveChat)
+
+
+
+def isMessageListEmpt():
+
+    if "messages" in st.session_state:
+        if len(st.session_state.messages) == 0:
+            return True
+        return False
+    return False
+    
 
 
 
 
+def setFirstMessage(firstMessage: str):
+    
+    # init messages list
+    if "messages" not in st.session_state:
+        st.session_state.messages = []
+
+    if isMessageListEmpt():
+        with st.chat_message("ai"):
+            st.markdown(firstMessage)
+
+
+
+
+def deleteChatHistoryAtLLMChance():
+    if "messages" in st.session_state:
+        st.session_state.messages = []   
+        
+
+
+
+
+def displayChatHistory(last_answer_count = 2, deleteChatHistoryAtLLM_Chance = False):
+
+    if deleteChatHistoryAtLLM_Chance:
+        deleteChatHistoryAtLLMChance()
+
+    # init messages list
+    if "messages" not in st.session_state:
+        st.session_state.messages = []
+
+    if len(st.session_state.messages) >= last_answer_count+2:
+        chat_history = st.expander("Chat history")
+
+        with chat_history:
+            for message in st.session_state.messages[:-last_answer_count]:
+                with st.chat_message(message["role"]):
+                    st.markdown(message["content"])    
+
+
+
+
+def isModelLoaded():
+    return init.model_loaded
 
 
 
@@ -72,32 +125,19 @@ def AI_Chat():
 
     helper.displayHeader("AI-Chatbot")
 
-    chat_history = st.expander("Chat history")
+    if isModelLoaded():
+        setFirstMessage("Hi, how can I help you today? 🙃")
+        displayChatHistory(last_answer_count = 2)
+        model.displayLastChatMessages(numberOfInputResponsePairs = 2)
 
-    if "messages" not in st.session_state:
-        st.session_state.messages = [
-            {"role": "assistant", "content": "Hi, how can I help you today? 🙃"}]
+        if user_prompt:
+            model.process_user_prompt(user_prompt)
+            wrf.writeLLMAnswerToFileIfEnabled('LLM_Answers.docx', user_prompt, init.fullResponse, enabled=init.writeInDocs)
 
-    if init.model_loaded:
-        model.display_Chathistory()
-
-    with chat_history:
-        for message in st.session_state.messages[:-1]:
-            with st.chat_message(message["role"]):
-                st.markdown(message["content"])     
-
-    if user_prompt and init.model_loaded and not model.init.error:
-        model.process_user_prompt()
-        wrf.write_the_language_model_answer_to_file('LLM_Answers.docx', user_prompt, init.fullResponse)
-
-    if not init.model_loaded:
+        saveChatForLLM_Memory(numberOfUserAssistensPairsToBeStored = 6, enabled=init.usechatMemory)
+    else:
         st.error("A language model must be activated in order to use the application.")
         st.info("To select a language model use the list at the top left and press 'update language model'", icon="ℹ️")
-
-    saveChat()
-
-
-
 
 
 
@@ -200,8 +240,8 @@ def monitor_memory():
 def RAG():
 
     st.markdown("<br><h3>Select dataset and load Embedding-Model</h3>", unsafe_allow_html=True)
-    border = st.container(border=True)
-    with border:
+    
+    with st.container(border=True):
         embeddings.handle_Datasets()
         with st.spinner("load embeddings..."):
             pass
@@ -233,6 +273,9 @@ def Infos():
 
 
 
+def storeUserInputInGlobalVar(init_user_prompt):
+    init.user_prompt = init_user_prompt
+
 
 
 
@@ -240,10 +283,7 @@ def Infos():
 #   Start   #
 #############
 if user_prompt := st.chat_input("Write here a Question...", key="user_input"):
-    init.user_prompt = user_prompt
-    model.LLm_Response(user_prompt)
-
-
+    storeUserInputInGlobalVar(init_user_prompt = user_prompt)
 
 
 

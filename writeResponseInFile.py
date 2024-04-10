@@ -27,10 +27,10 @@ def add_row_to_table(doc, user_prompt, fullResponse):
 
 
 # Writes the user input and the response of the language model to a Word file and saves it. 
-def write_the_language_model_answer_to_file(file_path, user_prompt, fullResponse):
+def writeLLMAnswerToFileIfEnabled(file_path, user_prompt, fullResponse, enabled=False):
 
     try:
-        if user_prompt and init.writeInDocs:
+        if user_prompt and enabled:
 
             if os.path.exists(file_path):
                 doc = Document(file_path)

@@ -1,4 +1,3 @@
-
 from huggingface_hub import get_hf_file_metadata, hf_hub_url
 from huggingface_hub import hf_hub_download
 from huggingface_hub import hf_hub_url
@@ -15,8 +14,6 @@ import os
 
 
 
-
-
 init = st.session_state
 filename = 'model_options.json'
 
@@ -25,16 +22,10 @@ filename = 'model_options.json'
 def get_model_url(model, sibling):
     return f"https://huggingface.co/{model.id}/resolve/main/{sibling.rfilename}"
 
-def get_model_Downlod_URL(model, sibling):
-    return f"https://huggingface.co/{model.id}/resolve/main/{sibling.rfilename}"
-
-
-
 
 def write_model_options_to_file(model_options, filename):
     with open(filename, 'w') as file:
         json.dump(model_options, file, indent=4)
-
 
 
 def update_llm_Json(json_file_path, data):
@@ -42,12 +33,10 @@ def update_llm_Json(json_file_path, data):
     st.experimental_rerun()
 
 
-
 def delete_llm_from_Json(data, model_file_name):
     for model_name, model_info in list(data.items()):
         if model_info["model_file_name"] == model_file_name:
             del data[model_name]
-
 
 
 def getURL(model):                    
@@ -104,9 +93,8 @@ def display_model_expander(model):
 
 
 
-# sord by downloads, likes, last_modified
-
 def model_search(searchtext, formatsupport, numberOFSearch):
+# Possible Sort: downloads, likes, last_modified
 
     try:
         api = HfApi()
@@ -137,7 +125,7 @@ def ShowSizeOfFiles(text, color):
 
 
 def show_language_model_variants(variants):
-    if "mmproj" in variants.rfilename:
+    if "mmproj" in variants.rfilename: # mmproj is a vision adapter for vision models. mmproj must also be downloaded
         mmproj = "👁️ "
         tooltip_text = "ℹ One of the 'mmproj' files is required for the vision function"
     else:
@@ -159,8 +147,6 @@ def read_model_options_from_file(filename):
 
 
 
-
-# !!! # If the model is not in .json, but in .cache folder and delete button is pressed, the download of the model starts. :-( Its because hf_hub_download()
 def getModelDeletePath(model, sibling):
     deletePath = hf_hub_download(repo_id=model.id, filename=sibling.rfilename, repo_type='model')
     parentDirectory = os.path.dirname(os.path.dirname(os.path.dirname(deletePath)))
@@ -168,9 +154,7 @@ def getModelDeletePath(model, sibling):
 
 
 
-
-
-def updateIndex(file='model_options.json'):
+def updateIndex(file='model_options.json', updateIndex=True):
 
     data = read_model_options_from_file(file)
 
@@ -179,7 +163,8 @@ def updateIndex(file='model_options.json'):
         data[key]['index'] = index
         index += 1
 
-    write_model_options_to_file(data, file)
+    if updateIndex:
+        write_model_options_to_file(data, file)
 
 
 
@@ -199,8 +184,6 @@ def add_new_model(name, repo_id, model_file_name, promptTemplate):
         "recommended": False
     }
     write_model_options_to_file(options, 'model_options.json')
-
-
 
 
 
@@ -230,6 +213,7 @@ def handle_button_action(model, sibling, delete_btn, download_btn, filename):
                 st.success("Download was successful!")
                 add_new_model(sibling.rfilename, model.id, sibling.rfilename, """<|im_start|>system\n{SystemPrompt}<|im_end|>\n<|im_start|>user\n{UserPrompt}<|im_end|>\n<|im_start|>assistant""")
                 st.experimental_rerun()
+
         except requests.exceptions.ConnectionError as e:
             st.error("No internet connection. Please check your network connection and try again.")
             with st.expander("Error:"):
@@ -239,9 +223,7 @@ def handle_button_action(model, sibling, delete_btn, download_btn, filename):
 
 
 
-
-
-def ModelAvailable(sibling):
+def isModelAvailable(sibling):
     return any(sibling.rfilename == model_info["model_file_name"] for model_info in read_model_options_from_file(filename).values())
 
 
@@ -263,13 +245,15 @@ def fetch_metadata_Size(url):
 
     try:
         metadata = get_hf_file_metadata(url)
-        gbStr = round((metadata.size / 1e+9)+1, 2)  # Bytes to GB
+        metadata_Model_size = round((metadata.size / 1e+9)+1, 2)  # Bytes to GB
 
     except Exception as e:
-        gbStr = 0.0
+        metadata_Model_size = 0.0
 
-    gbStr = round(gbStr, 2)
-    return gbStr
+    metadata_Model_size = round(metadata_Model_size, 2)
+    return metadata_Model_size
+
+
 
 
 @functools.lru_cache(maxsize=None)
@@ -293,7 +277,7 @@ def query_file_size_parallel(models):
 
 
 
-def clicked():
+def clicked_Search_BTN():
     init.search = True
 
 
@@ -307,10 +291,10 @@ def model_interaction_interface(models, progress, no_results, iterate_through_GG
 
             for sibling in model.siblings:
 
-                bar = iterate_through_GGUFSize+20
-                if bar > 100:
-                    bar = 100
-                progress.progress(bar, text="List models...")
+                progressBar = iterate_through_GGUFSize+20
+                if progressBar > 100:
+                    progressBar = 100
+                progress.progress(progressBar, text="List models...")
 
                 download_btn = None
                 delete_btn = None
@@ -319,25 +303,21 @@ def model_interaction_interface(models, progress, no_results, iterate_through_GG
                     continue
 
                 if sibling.rfilename.endswith('.gguf'):
-                    col1, col2, col3 = st.columns([4, 1, 1])     # quantization variant and download/delete
+                    col1_language_model_variants, col2_isModelAvailable, col3_ShowSizeOfFiles = st.columns([4, 1, 1])     # quantization variant and download/delete
 
-                with col1:
+                with col1_language_model_variants:
                     show_language_model_variants(sibling)
 
-                with col2:
-                    if ModelAvailable(sibling):
-                        delete_btn = st.button(" Delete ", key=f"delete_{model.id}_{sibling.rfilename}", type="primary", help=f"Remove '{sibling.rfilename}' completely from disk", on_click = clicked)
+                with col2_isModelAvailable:
+                    if isModelAvailable(sibling):
+                        delete_btn = st.button(" Delete ", key=f"delete_{model.id}_{sibling.rfilename}", type="primary", help=f"Remove '{sibling.rfilename}' completely from disk", on_click = clicked_Search_BTN)
                     else:
-                        download_btn = st.button("Download", key=f"delete_{model.id}_{sibling.rfilename}", help=f"Download language model from hf.co", on_click = clicked)
+                        download_btn = st.button("Download", key=f"delete_{model.id}_{sibling.rfilename}", help=f"Download language model from hf.co", on_click = clicked_Search_BTN)
 
-                with col3:
-                    
+                with col3_ShowSizeOfFiles:
                     if (not delete_btn or not download_btn) and GGUFFileSize != []:
                         ShowSizeOfFiles(str(GGUFFileSize[iterate_through_GGUFSize])+" GB", helper.get_color_based_on_memory(GGUFFileSize[iterate_through_GGUFSize], max_ram=max_ram, max_vram=max_vram))
-                    else:
-                        pass
                     iterate_through_GGUFSize += 1
-
 
                 if delete_btn or download_btn:
                     init.download = True
@@ -360,7 +340,6 @@ def startSearchBtn(key):
         </style>
     """, unsafe_allow_html=True)
 
-    # Erstelle den Button
     startSearch = st.button(" 🔎 Start search ", key=key)
     return startSearch
 
@@ -371,51 +350,39 @@ def startSearchBtn(key):
 
 
 
+def trendingModels(maximalModels = 20):
+
+    try:
+        url = "https://huggingface.co/api/trending"
+        response = requests.get(url)
+    except Exception as e:
+        print("Connection error:", e)
+        return
 
 
-
-
-
-
-def trendingModels(number = 20):
-    url = "https://huggingface.co/api/trending"
-
-    response = requests.get(url)
-
-    # Überprüfen, ob die Anfrage erfolgreich war (Status-Code 200)
     if response.status_code == 200:
 
-        data = response.json()         # Die JSON-Daten der Antwort extrahieren
-
-        # Auf die Liste der kürzlich angesagten Modelle zugreifen
+        data = response.json()         # Extract the JSON data of the response
         recently_trending = data.get("recentlyTrending", [])
+        numberOfTendingModelsDisplayed  = 0
 
-        count = 0
-
-        # Durch jedes Modell in der Liste iterieren und die ID ausgeben
         for model in recently_trending:
-            if count >= number:
-                break  # Wenn 5 Modelle gefunden wurden, die den Bedingungen entsprechen, die Schleife beenden
+            if numberOfTendingModelsDisplayed >= maximalModels:
+                break  
             if model.get("repoType") == "model":
-                model_id = model.get("repoData", {}).get("id")
-                fullname = model.get("authorData", {}).get("fullname")
+                #model_id = model.get("repoData", {}).get("id")
+                #fullname = model.get("authorData", {}).get("fullname")
                 repo_data = model.get("repoData", {})
                 model_id = repo_data.get("id")
                 fullname = repo_data.get("authorData", {}).get("fullname")
 
                 if model_id:
-                    url = f" {count+1}. {fullname} | {model_id} "
+                    url = f" {numberOfTendingModelsDisplayed+1}. {fullname} | {model_id} "
                     create_language_model_Link_Button(model_id, url)
-                    count += 1
+                    numberOfTendingModelsDisplayed += 1
     else:
-        # Falls die Anfrage nicht erfolgreich war, eine entsprechende Meldung ausgeben
         st.info("Error retrieving the data. Status code: ")
         st.info(response.status_code)
-
-
-
-
-
 
 
 
@@ -436,11 +403,11 @@ def searchModelsAndRelatedQuants(NumberOfSearchResults = 25):
         progress = st.empty()
 
         with st.container(border=True):
-            col1, col2, col3 = st.columns([1.0, 0.1, 0.3])
+            col1_searchtext, col2, col3_startSearch = st.columns([1.0, 0.1, 0.3])
 
-            with col1:
+            with col1_searchtext:
                 searchtext = st.text_input(label="Search language Models ", placeholder="🔎")
-            with col3: 
+            with col3_startSearch: 
                 startSearch = startSearchBtn(key="startSearch")
 
 
@@ -449,7 +416,7 @@ def searchModelsAndRelatedQuants(NumberOfSearchResults = 25):
             if searchtext == '' or searchtext is None:
                 return
             
-            models = model_search(searchtext, " gguf", NumberOfSearchResults)
+            models = model_search(searchtext=searchtext, formatsupport = " gguf", numberOFSearch=NumberOfSearchResults)
             progress.progress(2, text="Search GGUF quants...")
 
             try:
@@ -555,14 +522,13 @@ def show_Installed_LLMS():
 
     data = read_model_options_from_file(filename).values()
 
-    model_file_names = [options["model_file_name"] for options in data]
-    model_ids = [options["repo_id"] for options in data]
-    download = [options["download"] for options in data]
-    recommended = [options["recommended"] for options in data]
-
     col1_, col2_, col3_ = st.columns([0.7, 0.15, 0.25])
 
-    for model_file_name, model_id, download, recommended in zip(model_file_names, model_ids, download, recommended): 
+    for options in data:
+        model_file_name = options["model_file_name"]
+        model_id = options["repo_id"]
+        download = options["download"]
+        recommended = options["recommended"]
 
         with col1_:        
             create_language_model_Link_Button(model_id, model_file_name)

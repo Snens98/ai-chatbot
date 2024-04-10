@@ -35,7 +35,7 @@ def load_EmbeddingModel(type='cpu'): # type = cpu oder gpu (CUDA)
         init.embeddings = HuggingFaceEmbeddings(model_name="intfloat/multilingual-e5-large", model_kwargs={'device': type})
     else:
         st.info("No Cuda GPU is available. Run in CPU-Mode")
-        init.embeddings = HuggingFaceEmbeddings(model_name="intfloat/multilingual-e5-large", model_kwargs={'device': type})
+        init.embeddings = HuggingFaceEmbeddings(model_name="intfloat/multilingual-e5-large", model_kwargs={'device': 'cpu'})
 
 
 
@@ -86,19 +86,17 @@ def create_embeddings_From_Dokument():
     try:
         # Divide the text into several small blocks (chunks)
         text_splitter = RecursiveCharacterTextSplitter(chunk_size=init.chunk_size, chunk_overlap=init.overlap)
-
-        # text_splitter = CharacterTextSplitter(chunk_size=50, chunk_overlap=20)                 # other variant
         docs = text_splitter.split_documents(init.documents)
 
         # Create vector database from the document with the embedding model
         init.db = FAISS.from_documents(docs, init.embeddings)           # The embedding model must be loaded first
-
     
         unique_filename = get_unique_filename(f"Datasets/{init.embedding_name}", "db")
         init.db.save_local(unique_filename)
 
         st.success("The vector representations from the data set were successfully created.")
         st.experimental_rerun()
+
     except (OSError, RuntimeError) as e:
         st.error(f"Unsupported character in '{unique_filename}'")
         st.info("Change the name. Avoid characters like 'Ä, ö, ?, ', ^' and try again!")
@@ -108,23 +106,21 @@ def create_embeddings_From_Dokument():
 
 
 
-def updateSelectbox():
-    datasets_path = 'Datasets'
-    dataset_folders = [folder for folder in os.listdir(datasets_path) if os.path.isdir(os.path.join(datasets_path, folder))]
-    return dataset_folders
+def currentListOfFoldersOFSavedFiles(savedFiles_path):
+    ListOfFoldersOFSavedFiles = [folder for folder in os.listdir(savedFiles_path) if os.path.isdir(os.path.join(savedFiles_path, folder))]
+    return ListOfFoldersOFSavedFiles
 
 
 
 
 
-def removeSelectedDataset():
-    index = init.selected_index
-    datasets_path = 'Datasets'
-    dataset_folders = [folder for folder in os.listdir(datasets_path) if os.path.isdir(os.path.join(datasets_path, folder))]
+def removeSelectedDataset(index, savedFiles_path):
 
-    if index < len(dataset_folders):
-        folder_to_remove = dataset_folders[index]
-        folder_path = os.path.join(datasets_path, folder_to_remove)
+    ListOfFoldersOFSavedFiles = currentListOfFoldersOFSavedFiles(savedFiles_path)
+
+    if index < len(ListOfFoldersOFSavedFiles):
+        folder_to_remove = ListOfFoldersOFSavedFiles[index]
+        folder_path = os.path.join(savedFiles_path, folder_to_remove)
 
         try:
             shutil.rmtree(folder_path)
@@ -140,6 +136,28 @@ def removeSelectedDataset():
 
 
 
+def createFolderForSavedFilesWhenNotExist(savedFiles_path):
+    if not os.path.exists(savedFiles_path):
+        os.makedirs(savedFiles_path)
+
+
+
+def setTopicOfUploadedFile(savedFilesForRAG):
+    topic = savedFilesForRAG[:-3] if savedFilesForRAG.endswith('.db') else savedFilesForRAG
+    init.RAGTopic = topic
+
+
+
+def loadFAISSIndexFileBasedOnSelectedOption(savedFiles_path, savedFilesForRAG):
+
+    index_path = os.path.join(savedFiles_path, f"{savedFilesForRAG}")
+    init.RAGFilePath = index_path
+    init.db = FAISS.load_local(index_path, init.embeddings, allow_dangerous_deserialization=True)
+    return index_path
+
+
+
+
 
 ########################################
 # create new embeddings based on file #
@@ -147,92 +165,89 @@ def removeSelectedDataset():
 
 def handle_Datasets():
 
-    DB_option = None
-    datasets_path = 'Datasets'
-
-    if not os.path.exists(datasets_path):
-        os.makedirs(datasets_path)
+    savedFilesForRAG = None
+    savedFiles_path = 'Datasets'
+    createFolderForSavedFilesWhenNotExist(savedFiles_path)
 
     # List of folders in the datasets directory
-    dataset_folders = [folder for folder in os.listdir(datasets_path) if os.path.isdir(os.path.join(datasets_path, folder))]
+    ListOfFoldersOFSavedFiles = [folder for folder in os.listdir(savedFiles_path) if os.path.isdir(os.path.join(savedFiles_path, folder))]
 
     try:
-        # Streamlit widget for selecting the data set
-        DB_option = st.selectbox(
+        # Streamlit widget for selecting the dataset
+        savedFilesForRAG = st.selectbox(
             'Select Dataset: ',
-            updateSelectbox()
+            currentListOfFoldersOFSavedFiles(savedFiles_path)
         )
-        topic = DB_option[:-3] if DB_option.endswith('.db') else DB_option
-        init.RAGTopic = topic
 
-        if dataset_folders != []:
-        # Get the index of the selected option
-            init.selected_index = dataset_folders.index(DB_option)
+        setTopicOfUploadedFile(savedFilesForRAG)
 
+        if ListOfFoldersOFSavedFiles != []:
+            selectedIndex = ListOfFoldersOFSavedFiles.index(savedFilesForRAG)
             if st.button("Remove this file", type="primary"):
-                removeSelectedDataset()
+                removeSelectedDataset(selectedIndex, savedFiles_path)
+
+            index_path = loadFAISSIndexFileBasedOnSelectedOption(savedFiles_path, savedFilesForRAG)
 
 
-        # Load the FAISS index file based on the selected option
-            index_path = os.path.join(datasets_path, f"{DB_option}")
-            init.RAGFilePath = index_path
-            init.db = FAISS.load_local(index_path, init.embeddings, allow_dangerous_deserialization=True)
-    except (RuntimeError, Exception) as e:
-        if dataset_folders != []:
+    except (RuntimeError, Exception):
+        if ListOfFoldersOFSavedFiles != []:
             st.error(f"The file is corrupt or Empty.")
+
         try:
             st.info(index_path)
             send2trash.send2trash(index_path)
-            updateSelectbox()
+            currentListOfFoldersOFSavedFiles(savedFiles_path)
             st.experimental_rerun()
+
         except Exception as e:
-            if dataset_folders != []:
+            if ListOfFoldersOFSavedFiles != []:
                 st.info("Choose a other file!")
 
-    if DB_option != None:
-        init.selectedFile = DB_option
+    if savedFilesForRAG != None:
+        init.selectedFile = savedFilesForRAG
     st.markdown("<div style='height: 35px;'></div>", unsafe_allow_html=True)
 
 
 
+def setLitteSpace():
+    st.text("")
 
 
 
-
-
-def selectedFile():
-    return init.selectedFile[:-3]
-
-
+def isEmbeddingModelLoaded():
+    loaded = init.embedding_loaded
+    return loaded
 
 
 
 def handle_EmbeddingLLM():
 
+    # TODO: implement a selection of different embedding-models here
     option = st.selectbox(label='Selected Embedding-model', options=["intfloat/multilingual-e5-large [1.8 GB]"], label_visibility="visible")
-    st.text("")
+    setLitteSpace()
 
-    col1, col2 = st.columns(([2, 3]))
 
-    with col1:
+    col1_embeddingModell_Button, col2_embedding_Mode = st.columns(([2, 3]))
+
+    with col1_embeddingModell_Button:
         embeddingModell_Button = st.button("Load Embedding-Model")
 
-    with col2:
+    with col2_embedding_Mode:
         init.embedding_Mode = st.select_slider('Embedding-Modus', options=['CPU (RAM)', 'GPU [Cuda] (VRAM)'], label_visibility="collapsed")
 
-    st.text("")
+    setLitteSpace()
     if(embeddingModell_Button):
 
-        if init.embedding_loaded is False:
+        if not isEmbeddingModelLoaded():
 
             if init.embedding_Mode == "CPU (RAM)":
                 init.embedding = load_EmbeddingModel('cpu')
             else:
                 init.embedding = load_EmbeddingModel('cuda')
             
-        init.embedding_loaded = True
+            init.embedding_loaded = True
 
-    if(init.embedding_loaded):
+    if isEmbeddingModelLoaded():
         st.success(f"""Embedding-Modell: intfloat/multilingual-e5""")
     else:
         st.error("No Embedding-Model loaded!")
@@ -266,16 +281,16 @@ def save_uploaded_file(uploaded_file: bytes, save_dir: str):
 def create_Embedding_from_new_Dataset():
     st.markdown("<h3>Upload new File and save in vector database</h3>", unsafe_allow_html=True)
 
-    border = st.container(border=True)
-    with border:
+    with st.container(border=True):
         st.info("""If you want to use a large file with a lot of text, use the 'GPU [Cuda]' setting for the embedding model. This speeds up the process a lot! But you need free graphics memory and an Nvidea graphic card.""", icon="ℹ️")
-        st.text("")
+        setLitteSpace()
+
         init.embedding_name = st.text_input(
             "Write Topic of the file here 👇",
             placeholder="Language model",
             value="Language model"
         )
-        st.text("")
+        setLitteSpace()
 
         # Upload-widget to upload .txt, docx and .pdf files
         uploaded_file = st.file_uploader("Create vector representations from the file", type=["txt", "pdf", "docx"], disabled=not init.embedding_loaded, accept_multiple_files=True)
@@ -296,7 +311,7 @@ def create_Embedding_from_new_Dataset():
                     for doc in documents:
                         combined_text += f"{doc.text}\n\n\n"
                 
-                cleaned_text, removed_chars = remove_non_utf8(combined_text)
+                cleaned_text, removed_chars = remove_non_Supported_Chars(combined_text)
 
                 if len(removed_chars) > 0:
                     st.info(f"Removed unsupported characters: {removed_chars}")
@@ -304,13 +319,13 @@ def create_Embedding_from_new_Dataset():
                 prepare_Document(cleaned_text)
                 create_embeddings_From_Dokument()
 
-            st.text("")
+            setLitteSpace()
 
         if os.path.exists(save_dir):
             shutil.rmtree(save_dir)
 
 
-def remove_non_utf8(text):
+def remove_non_Supported_Chars(text):
     removed_chars = []
     
     #cleaned_text = text.encode('utf-8', 'ignore').decode('utf-8')
@@ -319,9 +334,9 @@ def remove_non_utf8(text):
     #cleaned_text = printable_chars
     
     # Find all characters that are not in the ASCII range and are not umlauts (ö,ü,ä, for German texts)
-    removed_non_utf8 = re.findall(r'(?![öäüÖÄÜ-])[^A-Za-z0-9\x00-\x7F]+', text)
+    removed_non_utf8 = re.findall(r'(?![öäüÖÄÜ-ß“„–])[^A-Za-z0-9\x00-\x7F]+', text)
     removed_chars = []
-    cleaned_text = re.sub(r'(?![öäüÖÄÜ-])[^A-Za-z0-9\x00-\x7F]+', '', text)
+    cleaned_text = re.sub(r'(?![öäüÖÄÜ-ß“„–])[^A-Za-z0-9\x00-\x7F]+', '', text)
     removed_chars.extend(removed_non_utf8)
     
     return cleaned_text, removed_chars
@@ -352,13 +367,10 @@ def search_similarity_embeddings_From_Input(user_question):
 
     try:
         # Search all relevant vectors that match the input vector
-        # results = init.db.similarity_search(user_question)                   
-
         # The returned distance value is the L2 distance. Therefore a lower score is better. Best results sorted in ascending order
         results = init.db.similarity_search_with_score(user_question, k=init.topk)      #k=x -> Search for the x best results: Vector similarity + Euclidean distance
         init.results = results
 
-        # Cache and filter results
         get_Embedding_Text_From_Input(results)
     except AttributeError as e:
         if init.rag:

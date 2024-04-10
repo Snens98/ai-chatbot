@@ -14,7 +14,7 @@ init = st.session_state
 
 
 # The function searches for an entry with a specific index in a JSON file and returns the corresponding template. 
-def get_template(selection_index):
+def searchedForAnEntryWithASpecificIndex(selection_index):
     with open("model_options.json", "r") as f:
         data = json.load(f)
 
@@ -26,6 +26,17 @@ def get_template(selection_index):
 
 
 
+
+def isTheModelCurrentlyLoaded():
+
+    if init.llm == None:
+        return False
+    return init.llm
+
+
+
+def getPathToModelOrDownload():
+    return hf_hub_download(repo_id=init.repo_id, filename=init.model_file_name, repo_type='model')
 
 
 
@@ -47,14 +58,14 @@ def update_LLM_In_Selectbox(option):
 
             with st.spinner("Load model..."):
 
-                if init.llm != None:
+                if isTheModelCurrentlyLoaded():
                     model.remove_llm()
 
                 init.repo_id = model_info['repo_id']
                 init.model_file_name = model_info['model_file_name']
 
                 with st.spinner(f"Download {init.model_file_name}"):
-                    init.model_path = hf_hub_download(repo_id=init.repo_id, filename=init.model_file_name, repo_type='model')
+                    init.model_path = getPathToModelOrDownload()
 
                 model.create_llm()
 
@@ -77,7 +88,6 @@ def display_model_load_success_message(option, condition):
     if condition:
         model_info = manageLLM.read_model_options_from_file('model_options.json').get(option, {})
         st.success(f"The language model {model_info['model_file_name']} was loaded successfully!")
-    init.model_updated = False
 
 
 
@@ -94,16 +104,14 @@ def handle_model():
     filtered_options = [option for option in options if 'mmproj' not in option]
     option = st.selectbox('Sprachmodell', filtered_options, label_visibility="collapsed")
     
-    # Anordnung der Buttons nebeneinander
-    col1, col2 = st.sidebar.columns(2)
+    col_update_LLM_In_Selectbox, col2_Unload_language_model = st.sidebar.columns(2)
 
-    with col1:
+    with col_update_LLM_In_Selectbox:
         update_LLM_In_Selectbox(option)
 
-    with col2:
+    with col2_Unload_language_model:
         if st.button("Unload language model", type="primary", help=f"Unload the currently selected language model from the memory (but not from the disk)"):
             model.remove_llm()
-            init.model_loaded = False
             st.info(f"Successfully removed!")
             st.rerun()
     display_model_load_success_message(option, init.model_updated and init.model_loaded)
@@ -121,23 +129,21 @@ def handle_model():
 # Additionally, it visually indicates the status of the RAG toggle button with different colored text depending on its state.
 def handle_toggle_Buttons():
     
-    border = st.container(border=True)
-    with border:
+    with st.container(border=True):
 
-        col1, col2 = st.columns(2)
+        col1_initRAG, col2_RAG_status = st.columns(2)
 
-        with col1:
+        with col1_initRAG:
             init.rag = st.toggle('RAG', label_visibility="visible")
+
         init.usechatMemory = st.toggle('Use Chat-Memory', label_visibility="visible")
         init.writeInDocs = st.toggle('Write language model answers in .docx', label_visibility="visible")
 
-        with col2:
-            # Status des Toggle-Schalters überprüfen
+        with col2_RAG_status:
             if init.rag:
                 st.markdown("<p style='color:#dffde9; background-color:#173928; border-radius:5px; text-align:center;'>RAG active!</p>", unsafe_allow_html=True)
             else:
                 st.markdown("<p style='color:#f5d5d5; background-color:#3e2428; border-radius:5px; text-align:center;'>RAG not active!</p>", unsafe_allow_html=True)
-
     helper.br(2)
 
 
@@ -208,33 +214,33 @@ def handle_Prompts():
     helper.br()
     st.markdown("<h3><Center>Prompting</Center></h3>", unsafe_allow_html=True)
 
-    expander = st.expander("System-Prompt")
-    with expander: # System-Prompt
+    expander_SystemPrompt = st.expander("System-Prompt")
+    with expander_SystemPrompt: 
         pr.init.system_prompt = systemPromptExpander(height=400)
 
 
-    expander2 = st.expander("Prompt-Template")
-    with expander2: # Prompt-Template
-        tem = st.selectbox(label=" ", options=pt.getTemplateList(), index=0)
-        init.template = pt.getTemplate(tem, get_template(init.model))
+    expander_PromptTemplate = st.expander("Prompt-Template")
+    with expander_PromptTemplate:
+        template = st.selectbox(label=" ", options=pt.getTemplateList(), index=0)
+        init.template = pt.getTemplate(template, searchedForAnEntryWithASpecificIndex(init.model))
 
-    #Prompt-Template anzeigen und ändern
-    expander3 = st.expander("Additional instructions (at the end)")
-    expander5 = st.expander("Chat-History-Template")
-    expander4 = st.expander("Response if no suitable info can be taken from the file (RAG)")
+
+    expander_AdditionalInstructions = st.expander("Additional instructions (at the end)")
+    expander_ChatHistory = st.expander("Chat-History-Template")
+    expander_noSuitableInfo = st.expander("Response if no suitable info can be taken from the file (RAG)")
 
 
     helper.dividerBr()
 
-    with expander3:
+    with expander_AdditionalInstructions:
         _end_Instruction = st.text_area(label=" ", value=pr.end_Instruction, height=200)
         init.endInstruction = _end_Instruction
 
-    with expander5:
+    with expander_ChatHistory:
         init.historyTemplateUSER = st.text_area("user:", "<|im_start|>user{}<|im_end|>", height=50)
         init.historyTemplateBOT = st.text_area("AI:", "<|im_start|>assistant{}<|im_end|>", height=50)
         
-    with expander4:
+    with expander_noSuitableInfo:
         text = "Important: Do not answer the following question! Answer only with: I don't know. Google yourself."
         init.notInfo = st.text_area(label=" ", value=text, height=200)
     

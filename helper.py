@@ -42,7 +42,7 @@ def memoryUsage():
 
 
 # to be able to use chat history for programming code
-def replace_brackets(text):
+def replaceBracketThatCodeCanStored(text):
     modified_text = ""
     for char in text:
         if char == "{":
