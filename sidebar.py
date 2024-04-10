@@ -87,7 +87,7 @@ def display_model_load_message(option, condition):
         model_info = manageLLM.read_model_options_from_file('model_options.json').get(option, {})
         st.success(f"The language model {model_info['model_file_name']} was loaded successfully!")
     else:
-        st.info(f"Successfully removed!")
+        st.info(f"No model is loaded!")
 
 
 

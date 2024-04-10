@@ -48,7 +48,7 @@ def AI_Chat():
         model.saveChatForLLM_Memory(numberOfUserAssistensPairsToBeStored = 6, enabled=init.usechatMemory)
     else:
         st.error("A language model must be activated in order to use the application.")
-        st.info("To select a language model use the list at the top left and press 'update language model'", icon="ℹ️")
+        st.info("To select a language model use the list at the top left and press 'Update language model'", icon="ℹ️")
 
 
 
@@ -125,7 +125,7 @@ def main():
         with tab7:
             with st.container(border=True):
                 manageLLM.show_Installed_LLMS()
-                
+
         with tab8:
             manageLLM.trendingModels(maximalModels=20)
 
