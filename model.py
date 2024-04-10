@@ -61,6 +61,85 @@ def ckeck_mmprojFileForVision():
 
 
 
+def saveChatForLLM_Memory(numberOfUserAssistensPairsToBeStored = 6, enabled=False):
+    init.saveChat = """ """
+
+    if enabled:
+        num_chatMessages = len(st.session_state.messages)
+        num_to_save_chatMessages = min(num_chatMessages, numberOfUserAssistensPairsToBeStored)
+        last_entries_chatMessages = st.session_state.messages[-num_to_save_chatMessages:]
+
+        for entry in last_entries_chatMessages:
+
+            if entry['role'] == 'user':
+                init.saveChat += init.historyTemplateUSER.format(entry['content'])
+
+            elif entry['role'] == 'assistant':
+                init.saveChat +=  init.historyTemplateBOT.format(entry['content'])
+            
+        init.saveChat = helper.replaceBracketThatCodeCanStored(init.saveChat)
+
+
+
+
+
+def isMessageListEmpt():
+
+    if "messages" in st.session_state:
+        if len(st.session_state.messages) == 0:
+            return True
+        return False
+    return False
+    
+
+
+
+
+def setFirstMessage(firstMessage: str):
+    
+    # init messages list
+    if "messages" not in st.session_state:
+        st.session_state.messages = []
+
+    if isMessageListEmpt():
+        with st.chat_message("ai"):
+            st.markdown(firstMessage)
+
+
+
+
+def deleteChatHistoryAtLLMChance():
+    if "messages" in st.session_state:
+        st.session_state.messages = []   
+        
+
+
+
+
+def displayChatHistory(last_answer_count = 2, deleteChatHistoryAtLLM_Chance = False):
+
+    if deleteChatHistoryAtLLM_Chance:
+        deleteChatHistoryAtLLMChance()
+
+    # init messages list
+    if "messages" not in st.session_state:
+        st.session_state.messages = []
+
+    if len(st.session_state.messages) >= last_answer_count+2:
+        chat_history = st.expander("Chat history")
+
+        with chat_history:
+            for message in st.session_state.messages[:-last_answer_count]:
+                with st.chat_message(message["role"]):
+                    st.markdown(message["content"])    
+
+
+
+
+
+
+def isModelLoaded():
+    return init.model_loaded
 
 
 

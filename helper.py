@@ -1,7 +1,9 @@
 from datetime import datetime
 import streamlit as st
+import threading
 import psutil
 import GPUtil
+import ctypes
 import os
 
 
@@ -133,3 +135,99 @@ def get_color_based_on_memory(size, max_ram, max_vram):
         return "#FFFF00"  # Gelb
     else:
         return "#7FFF7F"  # Hellgrün
+    
+
+
+
+
+    
+def exit():
+    for proc in psutil.process_iter(['pid', 'name']):
+        if proc.info['name'] == 'python':
+            for child_proc in psutil.Process(proc.info['pid']).children(recursive=True):
+                if child_proc.name() == 'cmd.exe':
+                    child_proc.terminate()
+                    break
+
+
+
+def show_error_message():
+    st.error("The language model is too large. The program is closed to avoid complications", icon='❌')
+
+
+
+
+def show_error_message(message):
+    MB_YESNO = 0x00000004  # Yes and No buttons
+    MB_ICONQUESTION = 0x00000020  # Question mark icon
+
+    # Display the MessageBox with Yes/No buttons
+    ctypes.windll.user32.MessageBeep(0xFFFFFFFF)  # Plays the error sound
+    result = ctypes.windll.user32.MessageBoxW(0, message, "Modell to large", MB_YESNO | MB_ICONQUESTION)
+    return result
+
+
+
+
+
+
+
+def monitor_memory():
+    timer = 0
+
+    try:
+        while True:
+
+            timer+=1      
+            total_memory = psutil.virtual_memory()
+            total_memory_usage = total_memory.used / (1024 * 1024 * 1024)
+
+            max_memory = get_max_memory()
+            max_vram = get_max_vram()
+
+            gpus = GPUtil.getGPUs()
+
+            if gpus:
+                first_gpu = gpus[0]
+                usedvram = (first_gpu.memoryUsed / 1024.0)
+            else:
+                usedvram = 0.0
+                    
+            usedvram = (float("{:.2f}".format(usedvram))) 
+            max_vram = (float("{:.2f}".format(max_vram)))
+
+            total_memory_usage = (float("{:.2f}".format(total_memory_usage)))
+            max_memory = (float("{:.2f}".format(max_memory)))
+
+            vram = max_vram/1.03 # puffer
+            ram = max_memory/1.03 # puffer
+
+            if usedvram >=(vram) and total_memory_usage >= ram:
+                if show_error_message("The language model is too large. Close the program to avoid complications?") == 6:
+                    os._exit(0)            
+
+            # After 1h shutdown App
+            if timer > 3600:
+                os._exit(0)
+
+            threading.Event().wait(1)
+    except KeyboardInterrupt:
+        print("Stopped.")
+
+
+
+
+init = st.session_state
+def startThread_monitorMemory():
+    
+    if not init.memUsageThread:
+        init.memUsageThread = True
+
+    monitor_thread = threading.Thread(target=monitor_memory)
+    monitor_thread.daemon = True
+    monitor_thread.start()
+
+
+
+
+
