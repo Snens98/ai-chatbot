@@ -7,7 +7,8 @@ import streamlit as st
 import send2trash
 import tempfile
 import shutil
-import torch
+import helper
+import time
 import os
 import re
 
@@ -21,6 +22,10 @@ embeddingModels = ["mixedbread-ai/mxbai-embed-large-v1", "WhereIsAI/UAE-Large-V1
                     "intfloat/e5-large-v2", "BAAI/bge-small-en-v1.5"]
 
 
+model_name="intfloat/multilingual-e5-small"
+
+
+
 
 
 
@@ -29,32 +34,19 @@ embeddingModels = ["mixedbread-ai/mxbai-embed-large-v1", "WhereIsAI/UAE-Large-V1
 # prepare embeddings #
 ######################
 
-def load_EmbeddingModel(type='cpu'): # type = cpu oder gpu (CUDA)
+def load_EmbeddingModel_device(device='cpu'): # type = cpu oder gpu (CUDA)
     
-    if torch.cuda.is_available():
-        init.embeddings = HuggingFaceEmbeddings(model_name="intfloat/multilingual-e5-large", model_kwargs={'device': type})
-    else:
-        st.info("No Cuda GPU is available. Run in CPU-Mode")
-        init.embeddings = HuggingFaceEmbeddings(model_name="intfloat/multilingual-e5-large", model_kwargs={'device': 'cpu'})
+    try:
+        import torch
 
-
-
-
-
-
-
-
-
-def prepare_Document(uploaded_text):
-
-    with tempfile.NamedTemporaryFile(mode="w", delete=False, suffix=".txt") as temp_file:
-        temp_file.write(uploaded_text)
-        temp_file_path = temp_file.name
-
-    loader = TextLoader(file_path=temp_file_path)
-    init.documents = loader.load()
-    
-    os.remove(temp_file_path)
+        if torch.cuda.is_available():
+            init.embeddings = HuggingFaceEmbeddings(model_name=model_name, model_kwargs={'device': device})
+        else:
+            st.info("No Cuda GPU is available. Run in CPU-Mode")
+            init.embeddings = HuggingFaceEmbeddings(model_name=model_name, model_kwargs={'device': 'cpu'})
+    except ImportError:
+        print("Torch not installed!")
+        init.embeddings = HuggingFaceEmbeddings(model_name=model_name, model_kwargs={'device': 'cpu'})
 
 
 
@@ -81,12 +73,12 @@ def get_unique_filename(base_name, extension, start=1):
 
 
 
-def create_embeddings_From_Dokument():
+def create_embeddings_From_Dokument(text):
 
     try:
         # Divide the text into several small blocks (chunks)
         text_splitter = RecursiveCharacterTextSplitter(chunk_size=init.chunk_size, chunk_overlap=init.overlap)
-        docs = text_splitter.split_documents(init.documents)
+        docs = text_splitter.split_documents(text)
 
         # Create vector database from the document with the embedding model
         init.db = FAISS.from_documents(docs, init.embeddings)           # The embedding model must be loaded first
@@ -94,7 +86,9 @@ def create_embeddings_From_Dokument():
         unique_filename = get_unique_filename(f"Datasets/{init.embedding_name}", "db")
         init.db.save_local(unique_filename)
 
+        setLitteSpace()
         st.success("The vector representations from the data set were successfully created.")
+        time.sleep(2)
         st.experimental_rerun()
 
     except (OSError, RuntimeError) as e:
@@ -123,7 +117,9 @@ def removeSelectedDataset(index, savedFiles_path):
         folder_path = os.path.join(savedFiles_path, folder_to_remove)
 
         try:
-            shutil.rmtree(folder_path)
+            #shutil.rmtree(folder_path)
+            send2trash.send2trash(folder_path)
+
             st.success(f"Folder '{folder_path}' removed successfully.")
         except OSError as e:
             st.error(f"Error: {e.strerror}")
@@ -178,7 +174,6 @@ def handle_Datasets():
             'Select Dataset: ',
             currentListOfFoldersOFSavedFiles(savedFiles_path)
         )
-
         setTopicOfUploadedFile(savedFilesForRAG)
 
         if ListOfFoldersOFSavedFiles != []:
@@ -186,26 +181,14 @@ def handle_Datasets():
             if st.button("Remove this file", type="primary"):
                 removeSelectedDataset(selectedIndex, savedFiles_path)
 
-            index_path = loadFAISSIndexFileBasedOnSelectedOption(savedFiles_path, savedFilesForRAG)
-
-
     except (RuntimeError, Exception):
         if ListOfFoldersOFSavedFiles != []:
             st.error(f"The file is corrupt or Empty.")
 
-        try:
-            st.info(index_path)
-            send2trash.send2trash(index_path)
-            currentListOfFoldersOFSavedFiles(savedFiles_path)
-            st.experimental_rerun()
-
-        except Exception as e:
-            if ListOfFoldersOFSavedFiles != []:
-                st.info("Choose a other file!")
-
     if savedFilesForRAG != None:
         init.selectedFile = savedFilesForRAG
-    st.markdown("<div style='height: 35px;'></div>", unsafe_allow_html=True)
+    helper.br()
+
 
 
 
@@ -220,12 +203,31 @@ def isEmbeddingModelLoaded():
 
 
 
+
+def loadEmbeddingModel():
+    if not isEmbeddingModelLoaded():
+
+        if init.embedding_Mode == "CPU (RAM)":
+            init.embedding = load_EmbeddingModel_device('cpu')
+        else:
+            init.embedding = load_EmbeddingModel_device('cuda')
+        
+        init.embedding_loaded = True
+
+    if isEmbeddingModelLoaded():
+        st.success(f"Embedding-Modell: {model_name}")
+    else:
+        st.error("No Embedding-Model loaded!")
+
+
+
+
+
 def handle_EmbeddingLLM():
 
     # TODO: implement a selection of different embedding-models here
-    option = st.selectbox(label='Selected Embedding-model', options=["intfloat/multilingual-e5-large [1.8 GB]"], label_visibility="visible")
+    option = st.selectbox(label='Selected Embedding-model', options=["intfloat/multilingual-e5-large [0.8 GB]"], label_visibility="visible")
     setLitteSpace()
-
 
     col1_embeddingModell_Button, col2_embedding_Mode = st.columns(([2, 3]))
 
@@ -237,29 +239,12 @@ def handle_EmbeddingLLM():
 
     setLitteSpace()
     if(embeddingModell_Button):
-
-        if not isEmbeddingModelLoaded():
-
-            if init.embedding_Mode == "CPU (RAM)":
-                init.embedding = load_EmbeddingModel('cpu')
-            else:
-                init.embedding = load_EmbeddingModel('cuda')
-            
-            init.embedding_loaded = True
-
-    if isEmbeddingModelLoaded():
-        st.success(f"""Embedding-Modell: intfloat/multilingual-e5""")
-    else:
-        st.error("No Embedding-Model loaded!")
+        loadEmbeddingModel()
 
     if not init.rag:
         st.info("""To enable the language model to extract information from the file, activate the "RAG" option in the settings on the left-hand side.""", icon="ℹ️")
 
         
-
-
-
-
 
 
 
@@ -277,61 +262,92 @@ def save_uploaded_file(uploaded_file: bytes, save_dir: str):
 
 
 
+
+def extractTextFromDocuments(uploaded_file, save_dir):
+
+    for uploaded in uploaded_file:
+        save_uploaded_file(uploaded, save_dir)
+
+    reader = SimpleDirectoryReader(input_dir=save_dir)
+    documents = reader.load_data()
+    combined_text = ""
+
+    if documents:
+        for doc in documents:
+            combined_text += f"{doc.text}\n\n\n"
+    
+    cleaned_text, removed_chars = remove_non_Supported_Chars(combined_text)
+
+    if len(removed_chars) > 0:
+        st.info(f"Removed unsupported characters: {removed_chars}")
+
+    with tempfile.NamedTemporaryFile(mode="w", delete=False, suffix=".txt") as temp_file:
+        temp_file.write(cleaned_text)
+        temp_file_path = temp_file.name
+
+    loader = TextLoader(file_path=temp_file_path)
+    extractedText = loader.load()
+    os.remove(temp_file_path)
+    return extractedText
+
+
+
+
+
+def createTextInputFieldForTopic(lable):
+    setLitteSpace()
+    init.embedding_name = st.text_input(
+        label=lable,
+        placeholder="Language model",
+        value="Language model"
+    )
+    setLitteSpace()
+
+
+
+
+
 #Upload new data set, convert to vectors and save in vector database
-def create_Embedding_from_new_Dataset():
+def uploadNewDatasetProcess():
     st.markdown("<h3>Upload new File and save in vector database</h3>", unsafe_allow_html=True)
 
     with st.container(border=True):
         st.info("""If you want to use a large file with a lot of text, use the 'GPU [Cuda]' setting for the embedding model. This speeds up the process a lot! But you need free graphics memory and an Nvidea graphic card.""", icon="ℹ️")
-        setLitteSpace()
 
-        init.embedding_name = st.text_input(
-            "Write Topic of the file here 👇",
-            placeholder="Language model",
-            value="Language model"
-        )
-        setLitteSpace()
+        createTextInputFieldForTopic(lable = "Write Topic of the file here 👇")
 
         # Upload-widget to upload .txt, docx and .pdf files
         uploaded_file = st.file_uploader("Create vector representations from the file", type=["txt", "pdf", "docx"], disabled=not init.embedding_loaded, accept_multiple_files=True)
         save_dir = os.getcwd() + "/data"
 
         if uploaded_file:
-
             if st.button("Create vector representation"):
-
-                for uploaded in uploaded_file:
-                    save_uploaded_file(uploaded, save_dir)
-
-                reader = SimpleDirectoryReader(input_dir=save_dir)
-                documents = reader.load_data()
-                combined_text = ""
-
-                if documents:
-                    for doc in documents:
-                        combined_text += f"{doc.text}\n\n\n"
-                
-                cleaned_text, removed_chars = remove_non_Supported_Chars(combined_text)
-
-                if len(removed_chars) > 0:
-                    st.info(f"Removed unsupported characters: {removed_chars}")
-
-                prepare_Document(cleaned_text)
-                create_embeddings_From_Dokument()
-
+                text = extractTextFromDocuments(uploaded_file, save_dir)
+                create_embeddings_From_Dokument(text)
             setLitteSpace()
+
 
         if os.path.exists(save_dir):
             shutil.rmtree(save_dir)
 
 
-def remove_non_Supported_Chars(text):
+
+
+def clean_non_printable_characters(text, removed_chars):
+    cleaned_text = text.encode('utf-8', 'ignore').decode('utf-8')
+    printable_chars = ''.join(char for char in cleaned_text if char.isprintable())
+    removed_chars.extend(set(cleaned_text) - set(printable_chars))
+    cleaned_text = printable_chars
+    return removed_chars, removed_chars
+
+
+
+
+def remove_non_Supported_Chars(text, clean_non_printable_chars=False):
     removed_chars = []
     
-    #cleaned_text = text.encode('utf-8', 'ignore').decode('utf-8')
-    #printable_chars = ''.join(char for char in cleaned_text if char.isprintable())
-    #removed_chars.extend(set(cleaned_text) - set(printable_chars))
-    #cleaned_text = printable_chars
+    if clean_non_printable_chars:
+        cleaned_text, removed_chars = clean_non_printable_characters()
     
     # Find all characters that are not in the ASCII range and are not umlauts (ö,ü,ä, for German texts)
     removed_non_utf8 = re.findall(r'(?![öäüÖÄÜ-ß“„–])[^A-Za-z0-9\x00-\x7F]+', text)
@@ -340,6 +356,7 @@ def remove_non_Supported_Chars(text):
     removed_chars.extend(removed_non_utf8)
     
     return cleaned_text, removed_chars
+
 
 
 
@@ -363,11 +380,9 @@ def get_Embedding_Text_From_Input(results):
 
 
 
-def search_similarity_embeddings_From_Input(user_question):
+def find_relevant_context(user_question):
 
     try:
-        # Search all relevant vectors that match the input vector
-        # The returned distance value is the L2 distance. Therefore a lower score is better. Best results sorted in ascending order
         results = init.db.similarity_search_with_score(user_question, k=init.topk)      #k=x -> Search for the x best results: Vector similarity + Euclidean distance
         init.results = results
 
@@ -376,6 +391,8 @@ def search_similarity_embeddings_From_Input(user_question):
         if init.rag:
             st.info("No File Selected")
         init.results = ""
+    except AssertionError:
+        helper.errorMsg(error="The selected file does not match the current embedding model", info="Select the correct file or change it to the appropriate embedding model")
 
 
 
