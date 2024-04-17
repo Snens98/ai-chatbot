@@ -7,7 +7,6 @@ import sidebar
 import helper
 import model
 
-
 init = st.session_state
 st.set_page_config(page_title="Local-AI-Chat")
 user_prompt = " "
@@ -30,13 +29,21 @@ def Sidebar():
     with col2:
         sidebar.handle_ChatHistory_Button()
 
+def checkGPU():
+    try:
+        import torch
+        if not torch.cuda.is_available():
+            st.info("GPU is not available. Model run now with CPU-Mode!")
+    except Exception as e:
+        st.info("GPU is not available. Model run now with CPU-Mode!")
+
 
 
 def AI_Chat():
 
     helper.displayHeader("AI-Chatbot")
 
-    if model.isModelLoaded():
+    if model.isModelLoaded(init.model_loaded):
         model.setFirstMessage("Hi, how can I help you today? 🙃")
         model.displayChatHistory(last_answer_count = 2)
         model.displayLastChatMessages(numberOfInputResponsePairs = 2)
@@ -44,8 +51,6 @@ def AI_Chat():
         if user_prompt:
             model.process_user_prompt(user_prompt)
             wrf.writeLLMAnswerToFileIfEnabled('LLM_Answers.docx', user_prompt, init.fullResponse, enabled=init.writeInDocs)
-
-        model.saveChatForLLM_Memory(numberOfUserAssistensPairsToBeStored = 6, enabled=init.usechatMemory)
     else:
         st.error("A language model must be activated in order to use the application.")
         st.info("To select a language model use the list at the top left and press 'Update language model'", icon="ℹ️")
@@ -64,13 +69,13 @@ def RAG():
             pass
             embeddings.handle_EmbeddingLLM()
     helper.br(2)
-    embeddings.create_Embedding_from_new_Dataset()
+    embeddings.uploadNewDatasetProcess()
     
 
 
 def Extracted_text():
     st.markdown("<br><br><h3>Extracted document text</h3>", unsafe_allow_html=True)
-    st.code(f"{init.vartext}")
+    st.markdown(f"{init.vartext}", unsafe_allow_html=True)
     st.divider()
     st.markdown("<br><br><h3>Extracted text segments with distance score</h3>", unsafe_allow_html=True)
     st.write(init.results)
@@ -95,8 +100,11 @@ if user_prompt := st.chat_input("Write here a Question...", key="user_input"):
 
 
 
+
+
 def main():
 
+    checkGPU()
     vars.initVars()
     
     tab1, tab2, tab3, tab4, tab5 = st.tabs(
