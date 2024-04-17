@@ -14,6 +14,8 @@ def getTemplateList():
 
 def getTemplate(selected_option, get_template):
 
+
+
     if selected_option == " Custom ":
         init.template = st.text_area(" ",get_template, height=400)
     elif selected_option == "ChatLM":
