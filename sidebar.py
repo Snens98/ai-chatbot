@@ -67,7 +67,7 @@ def update_LLM_In_Selectbox(option):
                 with st.spinner(f"Download {init.model_file_name}"):
                     init.model_path = getPathToModelOrDownload()
 
-                model.create_llm()
+                model.createModelInstance()
 
                 if init.llm is None:
                     return
@@ -91,6 +91,13 @@ def display_model_load_message(option, condition):
 
 
 
+def remove_mmprojFilesFromSelectbox():
+    options = manageLLM.read_model_options_from_file('model_options.json').keys()
+    filtered_options = [option for option in options if 'mmproj' not in option]
+    option = st.selectbox('Sprachmodell', filtered_options, label_visibility="collapsed")
+    return option
+
+
 
 
 # This function is responsible for managing the language model selection. It displays a header indicating the purpose of the selection, 
@@ -99,12 +106,7 @@ def display_model_load_message(option, condition):
 def handle_model():
 
     st.markdown("<h3><Center>Select Language-Model</Center></h3>", unsafe_allow_html=True)
-
-    # remove mmproj-Files from selectbox (for vision-models)
-    options = manageLLM.read_model_options_from_file('model_options.json').keys()
-    filtered_options = [option for option in options if 'mmproj' not in option]
-    option = st.selectbox('Sprachmodell', filtered_options, label_visibility="collapsed")
-    
+    option = remove_mmprojFilesFromSelectbox()
     col_update_LLM_In_Selectbox, col2_Unload_language_model = st.sidebar.columns(2)
 
     with col_update_LLM_In_Selectbox:
@@ -257,7 +259,7 @@ def handle_LLM_Settings():
     with border:
         init.gpu_layer = st.slider('Offloaded layers to GPU:', -1, 100, 20, disabled=init.download_Model)
         init.temperature = st.slider('Temperature:', 0.0, 1.0, 0.2, disabled=init.download_Model)
-        init.max_Token, init.n_ctx = st.select_slider('Maximum Output Tokens and n_ctx:', options = list(range(8, 4097)), value=(512, 2048))
+        init.max_Token, init.n_ctx = st.select_slider('Maximum Output Tokens:         Maximum processed tokens:', options = list(range(8, 4097)), value=(512, 2048))
         init.top_p = st.slider('top_p:', 0.0, 1.0, 0.9)
         init.min_p = st.slider('min_p:', 0.00, 0.50, 0.05)
         init.top_k = st.slider('top_k:', 1, 100, 30)
@@ -281,9 +283,6 @@ def handle_LLM_Settings():
 
 
 
-
-# Provision of a button labeled "Delete chat history". When this button is clicked (if st.button("Delete chat history"):), 
-# the chat history is deleted by clearing the list of messages saved in the session state (st.session_state.messages = []).
 def handle_ChatHistory_Button():
     if st.button("Delete chat history"):
         st.session_state.messages = []
