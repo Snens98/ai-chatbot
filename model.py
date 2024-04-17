@@ -10,6 +10,7 @@ import torch
 import gc
 import re
 import os
+import time
 
 
 init = st.session_state
@@ -38,31 +39,30 @@ def remove_llm(enforce=False):
 def ckeck_mmprojFileForVision():
 
     parent_directory = os.path.dirname(init.model_path)
-    elements = os.listdir(parent_directory)
-    result = [False, ""]
+    parent_directoryElements = os.listdir(parent_directory)
+    mmprojFile = [False, ""]
 
-    for element in elements:
+    for element in parent_directoryElements:
         if 'mmproj' in element:
-            mmprojFile = os.path.join(parent_directory, element)
+            mmprojFile_path = os.path.join(parent_directory, element)
             st.info(f"mmproj file found! Vision function is available!")
-            path = mmprojFile
             init.mmprojFileFound = True
-            result = [init.mmprojFileFound, path]
+            mmprojFile = [init.mmprojFileFound, mmprojFile_path]
             break
         else:
             st.info(f"mmproj file NOT found! Vision function is NOT available!")
             init.mmprojFileFound = False
-            result = [init.mmprojFileFound, None]
+            mmprojFile = [init.mmprojFileFound, None]
             break
 
-    return result
+    return mmprojFile
 
 
 
 
 
 def saveChatForLLM_Memory(numberOfUserAssistensPairsToBeStored = 6, enabled=False):
-    init.saveChat = """ """
+    saveChat = """ """
 
     if enabled:
         num_chatMessages = len(st.session_state.messages)
@@ -72,12 +72,13 @@ def saveChatForLLM_Memory(numberOfUserAssistensPairsToBeStored = 6, enabled=Fals
         for entry in last_entries_chatMessages:
 
             if entry['role'] == 'user':
-                init.saveChat += init.historyTemplateUSER.format(entry['content'])
+                saveChat += init.historyTemplateUSER.format(entry['content'])
 
             elif entry['role'] == 'assistant':
-                init.saveChat +=  init.historyTemplateBOT.format(entry['content'])
+                saveChat +=  init.historyTemplateBOT.format(entry['content'])
             
-        init.saveChat = helper.replaceBracketThatCodeCanStored(init.saveChat)
+        return helper.replaceBracketThatCodeCanStored(saveChat)
+         
 
 
 
@@ -95,11 +96,14 @@ def isMessageListEmpt():
 
 
 
-def setFirstMessage(firstMessage: str):
-    
-    # init messages list
+def initChatMemory():
     if "messages" not in st.session_state:
         st.session_state.messages = []
+
+
+
+def setFirstMessage(firstMessage: str):
+    initChatMemory()
 
     if isMessageListEmpt():
         with st.chat_message("ai"):
@@ -116,14 +120,12 @@ def deleteChatHistoryAtLLMChance():
 
 
 
-def displayChatHistory(last_answer_count = 2, deleteChatHistoryAtLLM_Chance = False):
+def displayChatHistory(last_answer_count = 2, deleteChatHistoryAtLLM_Change = False):
 
-    if deleteChatHistoryAtLLM_Chance:
+    if deleteChatHistoryAtLLM_Change:
         deleteChatHistoryAtLLMChance()
 
-    # init messages list
-    if "messages" not in st.session_state:
-        st.session_state.messages = []
+    initChatMemory()
 
     if len(st.session_state.messages) >= last_answer_count+2:
         chat_history = st.expander("Chat history")
@@ -137,53 +139,64 @@ def displayChatHistory(last_answer_count = 2, deleteChatHistoryAtLLM_Chance = Fa
 
 
 
-
-def isModelLoaded():
-    return init.model_loaded
-
+def isModelLoaded(model):
+    return model
 
 
 
-# Create a language model instance (LLM) with specific configuration parameters.
-# If there is an unsupported model, an error message is displayed and the LLM instance is set to None, 
-# indicating that the model is not loaded, and a flag is updated accordingly.
-def create_llm():
+def disableModel(model):
+    model = None
+    init.model_loaded = False
 
+
+
+
+def initialize_chat_handler_For_VisionLLM(chat_format = "llava-1-5"):
+
+    chat_handler = None
+    chat_format = None
+    isVisionModel = False
+
+    # Check if mmproj file for vision is found
     init.mmprojFileFound, path = ckeck_mmprojFileForVision()
 
+    if init.mmprojFileFound:
+        # Initialize chat handler with Llava15ChatHandler
+        init.chat_handler = Llava15ChatHandler(clip_model_path=path)
+        chat_handler = init.chat_handler
+        chat_format = chat_format
+        isVisionModel = True
+
+    return chat_handler, chat_format, isVisionModel
+
+
+
+
+
+
+#tokenizer: BaseLlamaTokenizer | None = None,
+def createModelInstance():
+
+    chat_handler, chat_format, isVisionModel = initialize_chat_handler_For_VisionLLM("llava-1-5")
+    
     try:
-        if init.mmprojFileFound:
-
-            init.chat_handler = Llava15ChatHandler(clip_model_path=path)
-
-            init.llm = Llama(
-                model_path=init.model_path,
-                chat_handler=init.chat_handler,
-                chat_format="llava-1-5",
-                n_gpu_layers=init.gpu_layer,
-                verbose=True, 
-                n_batch=512,
-                n_ctx=init.n_ctx,
-                use_mmap=False,
-                use_mlock=False,
-                logits_all=True) # needed to make llava work
-        else:
-            
-            init.llm = Llama(
-                model_path=init.model_path,
-                n_gpu_layers=init.gpu_layer,
-                verbose=True, 
-                n_batch=512,
-                n_ctx=init.n_ctx,
-                use_mmap=False,
-                use_mlock=False,                
-                ) 
-            
+        init.llm = Llama(
+            model_path=init.model_path,
+            chat_handler=chat_handler,
+            chat_format=chat_format,
+            n_gpu_layers=init.gpu_layer,
+            verbose=True, 
+            n_batch=512,
+            n_ctx=init.n_ctx,
+            use_mmap=False,
+            use_mlock=False,
+            logits_all=isVisionModel,
+        )
     except OSError:
         helper.errorMsg(error="This model is not yet supported", info="Select a different model and try again.")
-        init.llm = None
-        init.model_loaded = False
-
+        disableModel(init.llm)
+        
+        
 
 
 
@@ -198,11 +211,11 @@ def day_and_time():
 
 
 
-def systemPrompt(marker="###Context###"):
+def systemPrompt(markerForRAG_Context="###Context###"):
     if isRagActive():
-        system_prompt = f"{pr.init.system_prompt}\n\n{marker}\n{init.vartext}\n{marker}\n\n{day_and_time()}\n\n{init.saveChat}\n\n"
+        system_prompt = f"""{pr.init.system_prompt}{markerForRAG_Context}\n{init.vartext}\n{markerForRAG_Context}\n\n{day_and_time()}\n\n{saveChatForLLM_Memory(6, init.usechatMemory)}\n\n"""
     else:
-        system_prompt = f"{pr.init.system_prompt}\n\n{day_and_time()}\n\n{init.saveChat}\n\n"
+        system_prompt = f"{pr.init.system_prompt}\n\n{day_and_time()}\n\n{saveChatForLLM_Memory(6, init.usechatMemory)}\n\n"
 
     init.systemPrompt = system_prompt
     return system_prompt
@@ -210,10 +223,6 @@ def systemPrompt(marker="###Context###"):
 
 
 
-
-# To update the prompt used for the language model based on various parameters and configurations. 
-# It ensures that the prompt is formatted correctly and contains relevant information. 
-# It constructs the system prompt by combining system-related information, user prompts, and context if RAG is enabled. 
 def updatePrompt():
 
     try:
@@ -231,16 +240,10 @@ def updatePrompt():
         with st.expander("Error:"):
             st.error(e)
 
-        init.prompt = "Hello!"
-        init.promptError = True
-        return init.prompt
 
 
 
 
-
-
-# Get type of Image
 def imageType():
     if init.imageUpload != None:
         return str(init.imageUpload.type)
@@ -248,10 +251,7 @@ def imageType():
 
 
 
-
-# Create url of local image
-def image_to_base64_data_uri(file_path):
-
+def create_URL_Of_Local_Image(file_path):
     if file_path:
         type = imageType()
 
@@ -291,6 +291,8 @@ def getMessage(System, user, data_uri=None):
 
 
 
+
+
 def chatCompletionVision(System, user, data_uri=None):
     updatePrompt()
     return init.llm.create_chat_completion(
@@ -307,12 +309,32 @@ def chatCompletionVision(System, user, data_uri=None):
 
 
 
+def get_Language_Model():
+
+    return init.llm.create_completion(
+        
+        prompt=updatePrompt(),
+        stream=True, 
+        temperature=init.temperature,
+        max_tokens=init.max_Token,
+        top_p=init.top_p,
+        min_p=init.min_p,
+        top_k=init.top_k,
+        repeat_penalty=init.repeat_penalty
+    )
+
+
+
+def isVisionActive():
+    return (init.imageUpload and init.vision)
+
+
+
 def get_Vision_Model():
 
-    file_path = init.file_path
-    data_uri = image_to_base64_data_uri(file_path)
+    data_uri = create_URL_Of_Local_Image(init.file_path)
 
-    if init.imageUpload and init.vision:
+    if isVisionActive():
         try: 
             return chatCompletionVision(
                 System=init.systemPrompt,
@@ -330,31 +352,6 @@ def get_Vision_Model():
         return chatCompletionVision(
             System=f"{init.systemPrompt} Important! Let the user know that you have not received a picture!", 
             user=f"{init.user_prompt}\n{init.endInstruction}" )
-
-
-
-
-
-
-
-
-
-
-# The function retrieves the language model instance.
-def get_Language_Model():
-
-    return init.llm.create_completion(
-        
-        prompt=updatePrompt(),
-        stream=True, 
-        temperature=init.temperature,
-        max_tokens=init.max_Token,
-        top_p=init.top_p,
-        min_p=init.min_p,
-        top_k=init.top_k,
-        repeat_penalty=init.repeat_penalty
-    )
-
 
 
 
@@ -380,7 +377,7 @@ def iterateThroughVisionOutput(output):
 
 
 def iterateThroughLLMOutput(output):
-                        
+                      
     content_value = output['choices']
     value = content_value[0]['text']
     return value
@@ -399,6 +396,7 @@ def handle_n_ctx_Errors(_error):
     st.error(f"n_ctx must be set to at least {number}")
 
 
+
 def displayCurrentToken(output_container, currentResult, Icon="🔘"):
     output_container.markdown(currentResult + Icon)
 
@@ -409,6 +407,7 @@ def displayFinishedOutput(cancelBtn, output_container, result, completedSymbol="
     cancelBtn.empty()
     output_container.markdown(result + completedSymbol)
     st.session_state.messages.append({"role": "assistant", "content": init.fullResponse})
+
 
 
 
@@ -441,25 +440,28 @@ def displayCancelButton():
 
 
 
-# Process the user input and generate a response from the language model. It creates a user interface for the chat with an input field for the user
-# input and an output field for the generated response. Within the function, the language model is retrieved using the get_model() function. 
-# This function ensures the interaction between the user and the language model.
-def process_user_prompt(user_prompt):
-
-    try:
-        if isRagPipelineActive():
-            embeddings.search_similarity_embeddings_From_Input(user_prompt)  # Embeddings are created based on the input and similarities are searched for  
-    except AssertionError:
-        helper.errorMsg(error="The selected file does not match the current embedding model", info="Select the correct file or change it to the appropriate embedding model")
+def haveChatTemplateInvaledChars():
+    updatePrompt()
+    if init.promptError:
+        if 'message' in st.session_state:
+            if st.session_state.message:
+                st.session_state.message.pop()
+        return True
+    return False
 
 
-    # Display User-Imput
+
+def displayUserInput(user_prompt):
+
     with st.chat_message("user"):
         st.session_state.messages.append({"role": "user", "content": user_prompt})   
         st.markdown(user_prompt)
 
 
-    # Display LLM-Response
+
+
+def displayModelResponse():
+
     with st.chat_message("ai"):
 
         output_container = st.empty()
@@ -490,10 +492,28 @@ def process_user_prompt(user_prompt):
 
 
 
+
+
+
 def isRagPipelineActive():
     if init.rag and init.embedding_loaded and init.file:
         return True
     return False
+
+
+
+def process_user_prompt(user_prompt):
+
+    if haveChatTemplateInvaledChars():
+        return
+    
+    if isRagPipelineActive():
+        embeddings.find_relevant_context(user_prompt)
+
+    displayUserInput(user_prompt)
+    displayModelResponse()
+
+
 
 
 
