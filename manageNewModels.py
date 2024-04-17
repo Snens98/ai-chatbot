@@ -76,14 +76,14 @@ def display_model_expander(model):
         st.markdown(f'<a href="{url}" class="button">Link to language model</a>', unsafe_allow_html=True)
     with col3:
         st.markdown("""
-            <div title="Hier klicken, um mehr zu erfahren" style='
+            <div title=" " style='
                 background-color: #12161e;
                 text-align: center;
                 padding: 5px;
                 border-radius: 10px;
-                height: 30px; /* Anpassen der Höhe */
-                display: flex; /* Verwenden von Flexbox */
-                align-items: center; /* Vertikale Ausrichtung zentrieren */
+                height: 30px; 
+                display: flex;
+                align-items: center; 
             '>
                 <p style='font-size: 12px; color: #fafafa; margin: 0;'>Required (V)RAM</p>
             </div>
@@ -107,6 +107,8 @@ def model_search(searchtext, formatsupport, numberOFSearch):
         with st.expander("Error:"):
             st.error(e)
             return
+    except Exception as e:
+        return
     
 
 
@@ -203,6 +205,7 @@ def handle_button_action(model, sibling, delete_btn, download_btn, filename):
 
     if download_btn:
         try:
+            init.downloadStart = True
             downloadlink = hf_hub_url(repo_id=model.id, filename=sibling.rfilename)
             st.markdown("download-Link:")
             st.code(f"{downloadlink}")
@@ -347,18 +350,20 @@ def startSearchBtn(key):
 
 
 
+def getAPI(url_API):
+    try:
+        url = url_API
+        response = requests.get(url)
+        return response
+    except Exception as e:
+        print("Connection error:", e)
+        return
 
 
 
 def trendingModels(maximalModels = 20):
 
-    try:
-        url = "https://huggingface.co/api/trending"
-        response = requests.get(url)
-    except Exception as e:
-        print("Connection error:", e)
-        return
-
+    response = getAPI("https://huggingface.co/api/trending")
 
     if response.status_code == 200:
 
@@ -370,8 +375,6 @@ def trendingModels(maximalModels = 20):
             if numberOfTendingModelsDisplayed >= maximalModels:
                 break  
             if model.get("repoType") == "model":
-                #model_id = model.get("repoData", {}).get("id")
-                #fullname = model.get("authorData", {}).get("fullname")
                 repo_data = model.get("repoData", {})
                 model_id = repo_data.get("id")
                 fullname = repo_data.get("authorData", {}).get("fullname")
@@ -398,7 +401,7 @@ def searchModelsAndRelatedQuants(NumberOfSearchResults = 25):
     iterate_through_GGUFSize = 0
     GGUFFileSize = []
 
-    with st.spinner(f"Search models... 🔎"):
+    with st.spinner("Search models... 🔎"):
         
         progress = st.empty()
 
@@ -410,9 +413,8 @@ def searchModelsAndRelatedQuants(NumberOfSearchResults = 25):
             with col3_startSearch: 
                 startSearch = startSearchBtn(key="startSearch")
 
-
         if startSearch or init.search:
-
+            
             if searchtext == '' or searchtext is None:
                 return
             
@@ -431,7 +433,6 @@ def searchModelsAndRelatedQuants(NumberOfSearchResults = 25):
                 models = model_search(searchtext, " gguf", NumberOfSearchResults) 
 
                 model_interaction_interface(models, progress, no_results, iterate_through_GGUFSize, GGUFFileSize, max_ram, max_vram)
-
 
             except TimeoutError as e:
                 st.info("The search took too long and was aborted!")
