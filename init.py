@@ -24,8 +24,6 @@ def initVars():
     init.EMBEDDING_MODEL_NAME = st.session_state.get('EMBEDDING_MODEL_NAME', "intfloat/multilingual-e5-large")  # 2.4 GB of RAM
     #init.EMBEDDING_MODEL_NAME = st.session_state.get('EMBEDDING_MODEL_NAME', "BAAI/bge-large-en-v1.5")  # 1.4 GB of RAM
 
-    #intfloat/multilingual-e5-large
-    # intfloat/multilingual-e5-small
     # Prompt-Engineering
     init.model = st.session_state.get('model', 0)
     init.question = st.session_state.get('question', "")
@@ -34,8 +32,8 @@ def initVars():
     init.notInfo = st.session_state.get('notInfo', "")
 
     #RAG
-    init.db = st.session_state.get('db', None)  # Datenbank für die Vektoren
-    init.file = st.session_state.get('file', True) # Damit das Embedding nur einmal gemacht werden muss
+    init.db = st.session_state.get('db', None) 
+    init.file = st.session_state.get('file', True) 
     init.documents = st.session_state.get('documents', None)
     init.rag = st.session_state.get('rag', False)
     init.results = st.session_state.get('results', "")
@@ -44,10 +42,6 @@ def initVars():
     init.embedding_name = st.session_state.get('embedding_name', " ")
     init.embedding_loaded = st.session_state.get('embedding_loaded', False)
     init.embedding_Mode = st.session_state.get('embedding_Mode', "")
-
-    init.saveChat = st.session_state.get('saveChat', "")
-
-
 
 
 
@@ -184,14 +178,5 @@ def initVars():
     init.memUsageThread = st.session_state.get('memUsageThread', False)
 
 
-
-    init.timer = st.session_state.get('timer', 0)
-
-    init.proces = st.session_state.get('proces', None)
-
-    init.clickEmbedding = st.session_state.get('clickEmbedding', False)
-
-    init.currentFile = st.session_state.get('currentFile', "")
-
-    init.combined_text = st.session_state.get('combined_text', "")
+    init.downloadStart = st.session_state.get('downloadStart', False)
 
