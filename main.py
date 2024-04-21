@@ -58,7 +58,6 @@ def AI_Chat():
 
 
 
-
 def RAG():
 
     st.markdown("<br><h3>Select dataset and load Embedding-Model</h3>", unsafe_allow_html=True)
@@ -87,6 +86,15 @@ def Infos():
 
 
 
+def other():
+    helper.br(2)
+    init.dayDateInfo = st.toggle("Give model information about time, day, date & Username")
+    helper.br()
+    wholePrompt = st.text_area(label="Whole prompt", value=init.prompt, height=800)
+
+
+
+
 def storeUserInputInGlobalVar(init_user_prompt):
     init.user_prompt = init_user_prompt
 
@@ -107,8 +115,8 @@ def main():
     checkGPU()
     vars.initVars()
     
-    tab1, tab2, tab3, tab4, tab5 = st.tabs(
-        [" 💬 AI-Chat ", " 🗃️ Retrieval Augmented Generation (RAG)", " 📃 Extracted text", " ℹ️ Infos ", " ✚ Add Language-Model"])
+    tab1, tab2, tab3, tab4, tab5, tabOther = st.tabs(
+        [" 💬 AI-Chat ", " 🗃️ Retrieval Augmented Generation (RAG)", " 📃 Extracted text", " ℹ️ Infos ", " ✚ Add Language-Model", " Other "])
 
     with tab1:
         AI_Chat()
@@ -136,6 +144,8 @@ def main():
 
         with tab8:
             manageLLM.trendingModels(maximalModels=20)
+    with tabOther:
+        other()
 
     with st.sidebar:
         Sidebar()
