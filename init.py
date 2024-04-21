@@ -123,3 +123,7 @@ def initVars():
 
     init.dayDateInfo = st.session_state.get('dayDateInfo', False)
 
+    init.numberOfHistory = st.session_state.get('numberOfHistory', 7)
+
+
+

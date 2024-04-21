@@ -60,12 +60,12 @@ def ckeck_mmprojFileForVision():
 
 
 
-
 def saveChatForLLM_Memory(numberOfUserAssistensPairsToBeStored = 6, enabled=False):
     saveChat = """ """
 
-    if not enabled:
+    if not enabled or init.numberOfHistory <= 0:
         return ""
+
 
     if enabled:
         num_chatMessages = len(st.session_state.messages)
@@ -219,9 +219,9 @@ def additionalInfos():
 
 def systemPrompt(markerForRAG_Context="###Context###"):
     if isRagActive():
-        system_prompt = f"""{pr.init.system_prompt}{markerForRAG_Context}\n{init.vartext}\n{markerForRAG_Context}\n\n{additionalInfos()}{saveChatForLLM_Memory(6, init.usechatMemory)}\n"""
+        system_prompt = f"""{pr.init.system_prompt}{markerForRAG_Context}\n{init.vartext}\n{markerForRAG_Context}\n\n{additionalInfos()}{saveChatForLLM_Memory(init.numberOfHistory, init.usechatMemory)}\n"""
     else:
-        system_prompt = f"{pr.init.system_prompt}\n\n{additionalInfos()}{saveChatForLLM_Memory(6, init.usechatMemory)}\n"
+        system_prompt = f"{pr.init.system_prompt}\n\n{additionalInfos()}{saveChatForLLM_Memory(init.numberOfHistory, init.usechatMemory)}\n"
 
     init.systemPrompt = system_prompt
     return system_prompt

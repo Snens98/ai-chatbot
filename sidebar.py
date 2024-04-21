@@ -138,7 +138,12 @@ def handle_toggle_Buttons():
         with col1_initRAG:
             init.rag = st.toggle('RAG', label_visibility="visible")
 
-        init.usechatMemory = st.toggle('Use Chat-Memory', label_visibility="visible")
+        col1, col2 = st.columns(2)
+
+        with col1:
+            init.usechatMemory = st.toggle('Use Chat-Memory', label_visibility="visible")
+        with col2:
+            init.numberOfHistory = st.number_input('', value=4, min_value=0, max_value=16, label_visibility="collapsed", placeholder="Saved Chat messages", disabled=not init.usechatMemory, step=2)
         init.writeInDocs = st.toggle('Write language model answers in .docx', label_visibility="visible")
 
         with col2_RAG_status:
