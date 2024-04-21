@@ -7,17 +7,22 @@ init = st.session_state
 
 
 def getTemplateList():
-    list = [" Custom ", "ChatLM", "Mistral-Instruct", "Orca-Hashes", "Llama2-base", "Llama2-Chat", "Mixtral-Instruct", "User-Assistant", "User-Assistant2", "Sauerkraut", "EmGerman", "OpenChat", "OpenChat2", "DeepSeek", "CodeLlama", "Orca-Vicuna", "Command-r", "Zephyr", "Phi", "Gemma-it"]
+    list = [" Custom ", "Llama3-Instruct", "ChatLM", "Mistral-Instruct", "Orca-Hashes", "Llama2-base", "Llama2-Chat", "Mixtral-Instruct", "User-Assistant", "User-Assistant2", "Sauerkraut", "EmGerman", "OpenChat", "OpenChat2", "DeepSeek", "CodeLlama", "Orca-Vicuna", "Command-r", "Zephyr", "Phi", "Gemma-it"]
     return list
+
+
 
 
 
 def getTemplate(selected_option, get_template):
 
 
-
     if selected_option == " Custom ":
         init.template = st.text_area(" ",get_template, height=400)
+    
+    elif selected_option == "Llama3-Instruct":
+        init.template = st.text_area(" ","<|begin_of_text|><|start_header_id|>system<|end_header_id|>\n{SystemPrompt}<|eot_id|>\n\n<|start_header_id|>user<|end_header_id|>\n{UserPrompt}<|eot_id|>\n\n<|start_header_id|>assistant<|end_header_id|><|eot_id|>", height=400)
+
     elif selected_option == "ChatLM":
         init.template = st.text_area(" ", "<|im_start|>system\n{SystemPrompt}<|im_end|>\n<|im_start|>user{UserPrompt}<|im_end|>\n<|im_start|>assistant", height=400)
         init.historyTemplateUSER = "<|im_start|>user{}<|im_end|>"
