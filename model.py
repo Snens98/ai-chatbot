@@ -64,6 +64,9 @@ def ckeck_mmprojFileForVision():
 def saveChatForLLM_Memory(numberOfUserAssistensPairsToBeStored = 6, enabled=False):
     saveChat = """ """
 
+    if not enabled:
+        return ""
+
     if enabled:
         num_chatMessages = len(st.session_state.messages)
         num_to_save_chatMessages = min(num_chatMessages, numberOfUserAssistensPairsToBeStored)
@@ -78,6 +81,7 @@ def saveChatForLLM_Memory(numberOfUserAssistensPairsToBeStored = 6, enabled=Fals
                 saveChat +=  init.historyTemplateBOT.format(entry['content'])
             
         return helper.replaceBracketThatCodeCanStored(saveChat)
+    
          
 
 
@@ -201,21 +205,23 @@ def createModelInstance():
 
 
 
-def day_and_time():
-    date, time = helper.get_current_date_and_time()
-    info = "Date: " + date + "\nTime: "+ time + "\nWeekday: " + helper.get_current_weekday()
-    dayAndTimeInfo = f"Information on the current time, date and weekday can be found here: {info}\n"
-    return dayAndTimeInfo
-
+def additionalInfos():
+    if init.dayDateInfo:
+        date, time = helper.get_current_date_and_time()
+        username = os.getlogin()
+        info = "Date: " + date + "\nTime: "+ time + "\nWeekday: " + helper.get_current_weekday() + "\nUsername: " + username
+        infos = f"Information on the current time, date, weekday and username can be found here:\n{info}\n\n"
+        return infos
+    return ""
 
 
 
 
 def systemPrompt(markerForRAG_Context="###Context###"):
     if isRagActive():
-        system_prompt = f"""{pr.init.system_prompt}{markerForRAG_Context}\n{init.vartext}\n{markerForRAG_Context}\n\n{day_and_time()}\n\n{saveChatForLLM_Memory(6, init.usechatMemory)}\n\n"""
+        system_prompt = f"""{pr.init.system_prompt}{markerForRAG_Context}\n{init.vartext}\n{markerForRAG_Context}\n\n{additionalInfos()}{saveChatForLLM_Memory(6, init.usechatMemory)}\n"""
     else:
-        system_prompt = f"{pr.init.system_prompt}\n\n{day_and_time()}\n\n{saveChatForLLM_Memory(6, init.usechatMemory)}\n\n"
+        system_prompt = f"{pr.init.system_prompt}\n\n{additionalInfos()}{saveChatForLLM_Memory(6, init.usechatMemory)}\n"
 
     init.systemPrompt = system_prompt
     return system_prompt
@@ -307,8 +313,6 @@ def chatCompletionVision(System, user, data_uri=None):
     )
 
 
-
-
 def get_Language_Model():
 
     return init.llm.create_completion(
@@ -320,8 +324,10 @@ def get_Language_Model():
         top_p=init.top_p,
         min_p=init.min_p,
         top_k=init.top_k,
-        repeat_penalty=init.repeat_penalty
+        repeat_penalty=init.repeat_penalty,
+        stop=["<|eot_id|>assistant", "<|eot_id|>", "<|im_end|>", "</s>", "<end_of_turn>", "<|END_OF_TURN_TOKEN|>"]
     )
+
 
 
 
@@ -422,7 +428,6 @@ def getModel():
     else:
         with st.spinner("Analyze inputs..."):
             model = get_Language_Model()
-    
     return model
 
 
@@ -469,7 +474,7 @@ def displayModelResponse():
         token = ""
 
         with st.spinner("Generate response"):
-
+            
             try:
                 for output in getModel():
 
