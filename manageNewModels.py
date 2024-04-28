@@ -11,11 +11,20 @@ import helper
 import json
 import time
 import os
+import subprocess
+import re
+import os
+import sys
+import threading
+
+
+
 
 
 
 init = st.session_state
 filename = 'model_options.json'
+
 
 
 
@@ -190,9 +199,6 @@ def add_new_model(name, repo_id, model_file_name, promptTemplate):
 
 
 
-
-
-
 # Handles the actions that are performed when the "Delete" or "Download" button is clicked
 def handle_button_action(model, sibling, delete_btn, download_btn, filename):
 
@@ -205,13 +211,12 @@ def handle_button_action(model, sibling, delete_btn, download_btn, filename):
 
     if download_btn:
         try:
-            init.downloadStart = True
             downloadlink = hf_hub_url(repo_id=model.id, filename=sibling.rfilename)
             st.markdown("download-Link:")
             st.code(f"{downloadlink}")
             helper.br()
 
-            with st.spinner(f"Download '{sibling.rfilename}'"):
+            with st.spinner(f"Download '{model.id} | Quant: {sibling.rfilename}'"):
                 init.model_path = hf_hub_download(repo_id=model.id, filename=sibling.rfilename, repo_type='model')
                 st.success("Download was successful!")
                 add_new_model(sibling.rfilename, model.id, sibling.rfilename, """<|im_start|>system\n{SystemPrompt}<|im_end|>\n<|im_start|>user\n{UserPrompt}<|im_end|>\n<|im_start|>assistant""")
@@ -226,8 +231,11 @@ def handle_button_action(model, sibling, delete_btn, download_btn, filename):
 
 
 
-def isModelAvailable(sibling):
-    return any(sibling.rfilename == model_info["model_file_name"] for model_info in read_model_options_from_file(filename).values())
+def isModelAvailable(model, sibling):
+    quant =  any(sibling.rfilename == model_info["model_file_name"] for model_info in read_model_options_from_file(filename).values())
+    repo_id =  any(model.id == model_info["repo_id"] for model_info in read_model_options_from_file(filename).values())
+    return (quant and repo_id)
+
 
 
 
@@ -280,12 +288,13 @@ def query_file_size_parallel(models):
 
 
 
-def clicked_Search_BTN():
-    init.search = True
+def download_started():
+    init.downloadStart = True
 
 
 
 def model_interaction_interface(models, progress, no_results, iterate_through_GGUFSize, GGUFFileSize = [], max_ram = 32, max_vram= 32):
+
     for model in models:
 
         modelIDs = st.expander(f"{model.id}")
@@ -294,10 +303,11 @@ def model_interaction_interface(models, progress, no_results, iterate_through_GG
 
             for sibling in model.siblings:
 
-                progressBar = iterate_through_GGUFSize+20
-                if progressBar > 100:
-                    progressBar = 100
-                progress.progress(progressBar, text="List models...")
+                if not init.downloadStart:
+                    progressBar = iterate_through_GGUFSize+20
+                    if progressBar > 100:
+                        progressBar = 100
+                    progress.progress(progressBar, text="List models...")
 
                 download_btn = None
                 delete_btn = None
@@ -312,24 +322,29 @@ def model_interaction_interface(models, progress, no_results, iterate_through_GG
                     show_language_model_variants(sibling)
 
                 with col2_isModelAvailable:
-                    if isModelAvailable(sibling):
-                        delete_btn = st.button(" Delete ", key=f"delete_{model.id}_{sibling.rfilename}", type="primary", help=f"Remove '{sibling.rfilename}' completely from disk", on_click = clicked_Search_BTN)
+                    if isModelAvailable(model, sibling):
+                        delete_btn = st.button(" Delete ", key=f"delete_{model.id}_{sibling.rfilename}", type="primary", help=f"Remove '{sibling.rfilename}' completely from disk", on_click = download_started)
                     else:
-                        download_btn = st.button("Download", key=f"delete_{model.id}_{sibling.rfilename}", help=f"Download language model from hf.co", on_click = clicked_Search_BTN)
+                        download_btn = st.button("Download", key=f"delete_{model.id}_{sibling.rfilename}", help=f"Download language model from hf.co", on_click = download_started)
 
+                    
                 with col3_ShowSizeOfFiles:
                     if (not delete_btn or not download_btn) and GGUFFileSize != []:
                         ShowSizeOfFiles(str(GGUFFileSize[iterate_through_GGUFSize])+" GB", helper.get_color_based_on_memory(GGUFFileSize[iterate_through_GGUFSize], max_ram=max_ram, max_vram=max_vram))
+                        
                     iterate_through_GGUFSize += 1
 
                 if delete_btn or download_btn:
-                    init.download = True
                     handle_button_action(model, sibling, delete_btn, download_btn, filename)
 
     if iterate_through_GGUFSize == 0:
         no_results.info("No results!", icon="🔎")
     
 
+
+
+def onStartClick():
+    print("on_click-Methode")
 
 
 def startSearchBtn(key):
@@ -343,7 +358,7 @@ def startSearchBtn(key):
         </style>
     """, unsafe_allow_html=True)
 
-    startSearch = st.button(" 🔎 Start search ", key=key)
+    startSearch = st.button(" 🔎 Start search ", key=key, disabled=init.downloadStart)
     return startSearch
 
 
@@ -361,31 +376,33 @@ def getAPI(url_API):
 
 
 
+@st.experimental_fragment
 def trendingModels(maximalModels = 20):
 
-    response = getAPI("https://huggingface.co/api/trending")
+    if st.toggle(label=" Show models", value=False):
+        response = getAPI("https://huggingface.co/api/trending")
 
-    if response.status_code == 200:
+        if response.status_code == 200:
 
-        data = response.json()         # Extract the JSON data of the response
-        recently_trending = data.get("recentlyTrending", [])
-        numberOfTendingModelsDisplayed  = 0
+            data = response.json()         # Extract the JSON data of the response
+            recently_trending = data.get("recentlyTrending", [])
+            numberOfTendingModelsDisplayed  = 0
 
-        for model in recently_trending:
-            if numberOfTendingModelsDisplayed >= maximalModels:
-                break  
-            if model.get("repoType") == "model":
-                repo_data = model.get("repoData", {})
-                model_id = repo_data.get("id")
-                fullname = repo_data.get("authorData", {}).get("fullname")
+            for model in recently_trending:
+                if numberOfTendingModelsDisplayed >= maximalModels:
+                    break  
+                if model.get("repoType") == "model":
+                    repo_data = model.get("repoData", {})
+                    model_id = repo_data.get("id")
+                    fullname = repo_data.get("authorData", {}).get("fullname")
 
-                if model_id:
-                    url = f" {numberOfTendingModelsDisplayed+1}. {fullname} | {model_id} "
-                    create_language_model_Link_Button(model_id, url)
-                    numberOfTendingModelsDisplayed += 1
-    else:
-        st.info("Error retrieving the data. Status code: ")
-        st.info(response.status_code)
+                    if model_id:
+                        url = f" {numberOfTendingModelsDisplayed+1}. {fullname} | {model_id} "
+                        create_language_model_Link_Button(model_id, url)
+                        numberOfTendingModelsDisplayed += 1
+        else:
+            st.info("Error retrieving the data. Status code: ")
+            st.info(response.status_code)
 
 
 
@@ -401,7 +418,12 @@ def searchModelsAndRelatedQuants(NumberOfSearchResults = 25):
     iterate_through_GGUFSize = 0
     GGUFFileSize = []
 
-    with st.spinner("Search models... 🔎"):
+    if not init.downloadStart:
+        text = "Search models... 🔎"
+    else:
+        text = "Download ... "
+
+    with st.spinner(text):
         
         progress = st.empty()
 
@@ -413,19 +435,21 @@ def searchModelsAndRelatedQuants(NumberOfSearchResults = 25):
             with col3_startSearch: 
                 startSearch = startSearchBtn(key="startSearch")
 
-        if startSearch or init.search:
+        if startSearch or init.downloadStart:
             
             if searchtext == '' or searchtext is None:
                 return
             
             models = model_search(searchtext=searchtext, formatsupport = " gguf", numberOFSearch=NumberOfSearchResults)
-            progress.progress(2, text="Search GGUF quants...")
+            if not init.downloadStart:
+                progress.progress(2, text="Search GGUF quants...")
 
             try:
-                if not init.search:
+                if not init.downloadStart:
                     GGUFFileSize = query_file_size_parallel(models) # Create list of GGUFFileSize from models found
 
-                progress.progress(20, text="Search GGUF quants...")
+                if not init.downloadStart:
+                    progress.progress(20, text="Search GGUF quants...")
 
                 max_ram = helper.get_max_memory()
                 max_vram = helper.get_max_vram()
@@ -437,11 +461,12 @@ def searchModelsAndRelatedQuants(NumberOfSearchResults = 25):
             except TimeoutError as e:
                 st.info("The search took too long and was aborted!")
 
-            progress.progress(100, text="Complete!")
-            time.sleep(1)
+            if not init.downloadStart:
+                progress.progress(100, text="Complete!")
+                time.sleep(1)
             progress.empty()
 
-    init.search = False
+    init.downloadStart = False
 
 
 
@@ -566,5 +591,6 @@ def show_Installed_LLMS():
                                 value["download"] = True
                         
                         update_llm_Json(filename, data)
+
 
 

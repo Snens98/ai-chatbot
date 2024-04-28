@@ -72,7 +72,7 @@ def get_unique_filename(base_name, extension, start=1):
 
 
 
-
+@st.experimental_fragment
 def create_embeddings_From_Dokument(text):
 
     try:
@@ -89,7 +89,7 @@ def create_embeddings_From_Dokument(text):
         setLitteSpace()
         st.success("The vector representations from the data set were successfully created.")
         time.sleep(2)
-        st.experimental_rerun()
+        st.rerun()
 
     except (OSError, RuntimeError) as e:
         st.error(f"Unsupported character in '{unique_filename}'")
@@ -107,7 +107,7 @@ def currentListOfFoldersOFSavedFiles(savedFiles_path):
 
 
 
-
+@st.experimental_fragment
 def removeSelectedDataset(index, savedFiles_path):
 
     ListOfFoldersOFSavedFiles = currentListOfFoldersOFSavedFiles(savedFiles_path)
@@ -208,9 +208,9 @@ def loadEmbeddingModel():
     if not isEmbeddingModelLoaded():
 
         if init.embedding_Mode == "CPU (RAM)":
-            init.embedding = load_EmbeddingModel_device('cpu')
+            load_EmbeddingModel_device('cpu')
         else:
-            init.embedding = load_EmbeddingModel_device('cuda')
+            load_EmbeddingModel_device('cuda')
         
         init.embedding_loaded = True
 

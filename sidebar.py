@@ -44,6 +44,7 @@ def getPathToModelOrDownload():
 # This function updates a language model selection box based on the option chosen. It retrieves model information from a 
 # JSON file, sets the model index accordingly, and updates the selected language model in memory upon button click. 
 # It handles model loading and updates flags accordingly.
+@st.experimental_fragment
 def update_LLM_In_Selectbox(option):
 
     model_info = manageLLM.read_model_options_from_file('model_options.json').get(option, {})
@@ -75,6 +76,7 @@ def update_LLM_In_Selectbox(option):
                 init.model_loaded = True
                 init.model_updated = True
                 st.rerun()
+
             
 
 
@@ -82,12 +84,16 @@ def update_LLM_In_Selectbox(option):
 
 
 
-def display_model_load_message(option, condition):
-    if condition:
+def display_model_load_message(option, update, loaded):
+    if update:
         model_info = manageLLM.read_model_options_from_file('model_options.json').get(option, {})
         st.success(f"The language model {model_info['model_file_name']} was loaded successfully!")
-    else:
+    elif not loaded:
         st.info(f"No model is loaded!")
+    elif loaded and not update:
+        pass
+        #st.info(f"This model is not loaded!")
+
 
 
 
@@ -98,6 +104,12 @@ def remove_mmprojFilesFromSelectbox():
     return option
 
 
+
+@st.experimental_fragment
+def removeLLM():
+    if st.button("Unload language model", type="primary", help=f"Unload the currently selected language model from the memory (but not from the disk)"):
+        model.remove_llm()
+        st.rerun()
 
 
 # This function is responsible for managing the language model selection. It displays a header indicating the purpose of the selection, 
@@ -113,10 +125,10 @@ def handle_model():
         update_LLM_In_Selectbox(option)
 
     with col2_Unload_language_model:
-        if st.button("Unload language model", type="primary", help=f"Unload the currently selected language model from the memory (but not from the disk)"):
-            model.remove_llm()
-            st.rerun()
-    display_model_load_message(option, init.model_updated and init.model_loaded)
+        removeLLM()
+    
+    display_model_load_message(option, init.model_updated, init.model_loaded)
+    init.model_updated = False
 
     st.divider()
     helper.br()
@@ -126,9 +138,9 @@ def handle_model():
 
 
 
-
 # To manage toggle buttons for various settings. It presents toggle buttons for options such as RAG, Chat-Memory usage, and writing language model answers in a .docx file.
 # Additionally, it visually indicates the status of the RAG toggle button with different colored text depending on its state.
+@st.experimental_fragment
 def handle_toggle_Buttons():
     
     with st.container(border=True):
@@ -192,7 +204,7 @@ def createTempImage(image):
     
         
 
-
+@st.experimental_fragment
 def imageFileUpload():
     init.vision = st.toggle("Activate vision funktion")
     image = st.file_uploader(label=" Upload image for vision model", accept_multiple_files=False, type=["png", "jpg"])
@@ -210,6 +222,7 @@ def imageFileUpload():
 
 # The basic task of the function handle_Prompts() is to manage and display application settings related to prompting. 
 # This includes displaying system prompts, prompt templates, additional instructions, and responses if no suitable information can be retrieved.
+@st.experimental_fragment
 def handle_Prompts():
 
     helper.br()
@@ -256,6 +269,7 @@ def handle_Prompts():
 
 # To manage and display settings related to language models and embeddings. 
 # It presents sliders and select sliders for adjusting various parameters related to language model generation and embedding processing. 
+@st.experimental_fragment
 def handle_LLM_Settings():
 
     st.markdown("<h3><Center>Language-Model Settings</Center></h3>", unsafe_allow_html=True)

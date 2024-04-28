@@ -7,10 +7,10 @@ import sidebar
 import helper
 import model
 
+
 init = st.session_state
 st.set_page_config(page_title="Local-AI-Chat")
 user_prompt = " "
-
 
 
 def Sidebar():
@@ -28,14 +28,6 @@ def Sidebar():
     col1, col2, col3 = st.columns([1, 2, 1])
     with col2:
         sidebar.handle_ChatHistory_Button()
-
-def checkGPU():
-    try:
-        import torch
-        if not torch.cuda.is_available():
-            st.info("GPU is not available. Model run now with CPU-Mode!")
-    except Exception as e:
-        st.info("GPU is not available. Model run now with CPU-Mode!")
 
 
 
@@ -57,7 +49,7 @@ def AI_Chat():
 
 
 
-
+#@st.experimental_fragment
 def RAG():
 
     st.markdown("<br><h3>Select dataset and load Embedding-Model</h3>", unsafe_allow_html=True)
@@ -85,13 +77,12 @@ def Infos():
     helper.memoryUsage()
 
 
-
+#@st.experimental_fragment
 def other():
     helper.br(2)
     init.dayDateInfo = st.toggle("Give model information about time, day, date & Username")
     helper.br()
     wholePrompt = st.text_area(label="Whole prompt", value=init.prompt, height=800)
-
 
 
 
@@ -108,11 +99,8 @@ if user_prompt := st.chat_input("Write here a Question...", key="user_input"):
 
 
 
-
-
 def main():
-
-    checkGPU()
+    
     vars.initVars()
     
     tab1, tab2, tab3, tab4, tab5, tabOther = st.tabs(
@@ -140,10 +128,13 @@ def main():
 
         with tab7:
             with st.container(border=True):
+                pass
                 manageLLM.show_Installed_LLMS()
 
         with tab8:
+            pass
             manageLLM.trendingModels(maximalModels=20)
+
     with tabOther:
         other()
 

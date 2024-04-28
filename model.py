@@ -4,13 +4,10 @@ from urllib.error import URLError
 from llama_cpp import Llama
 import helper as helper
 import streamlit as st
-import prompt as pr
 import base64
-import torch
 import gc
 import re
 import os
-import time
 
 
 init = st.session_state
@@ -30,7 +27,7 @@ def remove_llm(enforce=False):
         st.cache_data.clear()
         st.cache_resource.clear()
         gc.collect()
-        torch.cuda.empty_cache()
+        #torch.cuda.empty_cache()
         init.model_loaded = False
 
 
@@ -210,7 +207,7 @@ def additionalInfos():
         date, time = helper.get_current_date_and_time()
         username = os.getlogin()
         info = "Date: " + date + "\nTime: "+ time + "\nWeekday: " + helper.get_current_weekday() + "\nUsername: " + username
-        infos = f"Information on the current time, date, weekday and username can be found here:\n{info}\n\n"
+        infos = f"Information on the current time, date, weekday and username can be found here:\n{info}\n"
         return infos
     return ""
 
@@ -219,12 +216,19 @@ def additionalInfos():
 
 def systemPrompt(markerForRAG_Context="###Context###"):
     if isRagActive():
-        system_prompt = f"""{pr.init.system_prompt}{markerForRAG_Context}\n{init.vartext}\n{markerForRAG_Context}\n\n{additionalInfos()}{saveChatForLLM_Memory(init.numberOfHistory, init.usechatMemory)}\n"""
+        system_prompt = f"""{init.system_prompt}\n\n{markerForRAG_Context}\n{init.vartext}\n{markerForRAG_Context}\n\n{additionalInfos()}{saveChatForLLM_Memory(init.numberOfHistory, init.usechatMemory)}\n"""
     else:
-        system_prompt = f"{pr.init.system_prompt}\n\n{additionalInfos()}{saveChatForLLM_Memory(init.numberOfHistory, init.usechatMemory)}\n"
+        system_prompt = f"{init.system_prompt}\n{additionalInfos()}{saveChatForLLM_Memory(init.numberOfHistory, init.usechatMemory)}\n"
 
     init.systemPrompt = system_prompt
     return system_prompt
+
+
+
+
+
+
+
 
 
 
@@ -409,7 +413,7 @@ def displayCurrentToken(output_container, currentResult, Icon="🔘"):
 
 
 
-def displayFinishedOutput(cancelBtn, output_container, result, completedSymbol="🟢"):
+def displayFinishedOutput(cancelBtn, output_container, result, completedSymbol=""):
     cancelBtn.empty()
     output_container.markdown(result + completedSymbol)
     st.session_state.messages.append({"role": "assistant", "content": init.fullResponse})
@@ -492,7 +496,7 @@ def displayModelResponse():
             except ValueError as error:
                 handle_n_ctx_Errors(error)
 
-            displayFinishedOutput(button_container, output_container, token, completedSymbol="🟢")
+            displayFinishedOutput(button_container, output_container, token, completedSymbol="")
 
 
 

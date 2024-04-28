@@ -230,4 +230,14 @@ def startThread_monitorMemory():
 
 
 
+def checkGPU():
+    try:
+        import torch
+        if not torch.cuda.is_available():
+            st.info("GPU is not available. Model run now with CPU-Mode!")
+    except Exception as e:
+        st.info("GPU is not available. Model run now with CPU-Mode!")
+
+
+
 
