@@ -44,7 +44,7 @@ def load_EmbeddingModel_device(device='cpu'): # type = cpu oder gpu (CUDA)
         else:
             st.info("No Cuda GPU is available. Run in CPU-Mode")
             init.embeddings = HuggingFaceEmbeddings(model_name=model_name, model_kwargs={'device': 'cpu'})
-    except ImportError:
+    except Exception:
         print("Torch not installed!")
         init.embeddings = HuggingFaceEmbeddings(model_name=model_name, model_kwargs={'device': 'cpu'})
 
@@ -72,7 +72,7 @@ def get_unique_filename(base_name, extension, start=1):
 
 
 
-@st.experimental_fragment
+#@st.experimental_fragment
 def create_embeddings_From_Dokument(text):
 
     try:
@@ -178,6 +178,10 @@ def handle_Datasets():
 
         if ListOfFoldersOFSavedFiles != []:
             selectedIndex = ListOfFoldersOFSavedFiles.index(savedFilesForRAG)
+
+            loadFAISSIndexFileBasedOnSelectedOption(savedFiles_path, savedFilesForRAG)
+
+
             if st.button("Remove this file", type="primary"):
                 removeSelectedDataset(selectedIndex, savedFiles_path)
 
@@ -385,7 +389,6 @@ def find_relevant_context(user_question):
     try:
         results = init.db.similarity_search_with_score(user_question, k=init.topk)      #k=x -> Search for the x best results: Vector similarity + Euclidean distance
         init.results = results
-
         get_Embedding_Text_From_Input(results)
     except AttributeError as e:
         if init.rag:
@@ -393,7 +396,5 @@ def find_relevant_context(user_question):
         init.results = ""
     except AssertionError:
         helper.errorMsg(error="The selected file does not match the current embedding model", info="Select the correct file or change it to the appropriate embedding model")
-
-
 
 
